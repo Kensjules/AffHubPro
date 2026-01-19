@@ -14,7 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string
+          id: string
+          timezone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          id: string
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          id?: string
+          timezone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      shareasale_accounts: {
+        Row: {
+          api_secret_encrypted: string
+          api_token_encrypted: string
+          created_at: string | null
+          id: string
+          is_connected: boolean | null
+          last_sync_at: string | null
+          merchant_id: string
+          sync_status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_secret_encrypted: string
+          api_token_encrypted: string
+          created_at?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          merchant_id: string
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_secret_encrypted?: string
+          api_token_encrypted?: string
+          created_at?: string | null
+          id?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          merchant_id?: string
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareasale_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions_cache: {
+        Row: {
+          amount: number
+          click_date: string | null
+          clicks: number | null
+          commission: number | null
+          created_at: string | null
+          id: string
+          merchant_name: string | null
+          shareasale_account_id: string
+          status: string
+          transaction_date: string
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          click_date?: string | null
+          clicks?: number | null
+          commission?: number | null
+          created_at?: string | null
+          id?: string
+          merchant_name?: string | null
+          shareasale_account_id: string
+          status: string
+          transaction_date: string
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          click_date?: string | null
+          clicks?: number | null
+          commission?: number | null
+          created_at?: string | null
+          id?: string
+          merchant_name?: string | null
+          shareasale_account_id?: string
+          status?: string
+          transaction_date?: string
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_cache_shareasale_account_id_fkey"
+            columns: ["shareasale_account_id"]
+            isOneToOne: false
+            referencedRelation: "shareasale_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_cache_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
