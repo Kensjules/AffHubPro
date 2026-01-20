@@ -1,1 +1,10 @@
 project_id = "fqqwdswevtwrgkornjqo"
+
+[functions.validate-shareasale]
+verify_jwt = false
+
+[functions.sync-shareasale]
+verify_jwt = false
+
+[functions.send-email]
+verify_jwt = false

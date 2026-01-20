@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { BarChart3, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { z } from "zod";
 
 const benefits = [
   "Real-time earnings tracking",
@@ -13,21 +15,51 @@ const benefits = [
   "Bank-level security"
 ];
 
+const signupSchema = z.object({
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
 export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string }>({});
   const navigate = useNavigate();
+  const { signUp, user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      navigate("/onboarding");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
+
+    const result = signupSchema.safeParse({ name, email, password });
+    if (!result.success) {
+      const fieldErrors: { name?: string; email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        fieldErrors[field as keyof typeof fieldErrors] = err.message;
+      });
+      setErrors(fieldErrors);
+      return;
+    }
+
     setLoading(true);
+    const { error } = await signUp(email, password, name);
     
-    // Simulate signup - will be replaced with real auth
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    toast.success("Account created! Let's connect your ShareASale account.");
-    navigate("/onboarding");
+    if (error) {
+      toast.error(error.message || "Failed to create account");
+    } else {
+      toast.success("Account created! Let's connect your ShareASale account.");
+      navigate("/onboarding");
+    }
     setLoading(false);
   };
 
@@ -94,6 +126,7 @@ export default function Signup() {
                   required
                 />
               </div>
+              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
             </div>
 
             <div className="space-y-2">
@@ -110,6 +143,7 @@ export default function Signup() {
                   required
                 />
               </div>
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -128,6 +162,7 @@ export default function Signup() {
                 />
               </div>
               <p className="text-xs text-muted-foreground">Minimum 8 characters</p>
+              {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
             </div>
 
             <Button 

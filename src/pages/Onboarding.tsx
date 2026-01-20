@@ -9,35 +9,50 @@ import {
   Hash, 
   ArrowRight, 
   CheckCircle2, 
-  AlertCircle,
   ExternalLink,
   Loader2
 } from "lucide-react";
 import { toast } from "sonner";
+import { useConnectShareASale, useSyncShareASale } from "@/hooks/useShareASale";
+import { z } from "zod";
+
+const credentialsSchema = z.object({
+  merchantId: z.string().min(3, "Merchant ID must be at least 3 characters"),
+  apiToken: z.string().min(10, "API Token must be at least 10 characters"),
+  apiSecret: z.string().min(10, "API Secret must be at least 10 characters"),
+});
 
 export default function Onboarding() {
   const [merchantId, setMerchantId] = useState("");
   const [apiToken, setApiToken] = useState("");
   const [apiSecret, setApiSecret] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [validating, setValidating] = useState(false);
   const [validated, setValidated] = useState(false);
+  const [errors, setErrors] = useState<{ merchantId?: string; apiToken?: string; apiSecret?: string }>({});
   const navigate = useNavigate();
+  
+  const connectMutation = useConnectShareASale();
+  const syncMutation = useSyncShareASale();
 
   const validateCredentials = async () => {
-    if (!merchantId || !apiToken || !apiSecret) {
-      toast.error("Please fill in all fields");
+    setErrors({});
+    
+    const result = credentialsSchema.safeParse({ merchantId, apiToken, apiSecret });
+    if (!result.success) {
+      const fieldErrors: typeof errors = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as keyof typeof errors;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
       return;
     }
 
-    setValidating(true);
-    
-    // Simulate API validation - will be replaced with real ShareASale API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setValidating(false);
-    setValidated(true);
-    toast.success("ShareASale connection verified!");
+    try {
+      await connectMutation.mutateAsync({ merchantId, apiToken, apiSecret });
+      setValidated(true);
+    } catch (error) {
+      // Error already handled by mutation
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,12 +63,19 @@ export default function Onboarding() {
       return;
     }
     
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success("Setup complete! Syncing your data...");
-    navigate("/dashboard");
-    setLoading(false);
+    // Trigger initial sync
+    try {
+      await syncMutation.mutateAsync();
+      toast.success("Setup complete! Your data is syncing...");
+      navigate("/dashboard");
+    } catch (error) {
+      // Still navigate even if sync fails - they can retry later
+      navigate("/dashboard");
+    }
   };
+
+  const isValidating = connectMutation.isPending;
+  const isSubmitting = syncMutation.isPending;
 
   return (
     <div className="min-h-screen flex bg-background dark">
@@ -73,7 +95,7 @@ export default function Onboarding() {
               </div>
               <div>
                 <p className="font-medium text-foreground">Log in to ShareASale</p>
-                <p className="text-sm text-muted-foreground">Go to your ShareASale merchant dashboard</p>
+                <p className="text-sm text-muted-foreground">Go to your ShareASale affiliate dashboard</p>
               </div>
             </div>
             <div className="flex gap-4">
@@ -151,19 +173,20 @@ export default function Onboarding() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="merchantId">Merchant ID</Label>
+              <Label htmlFor="merchantId">Affiliate ID</Label>
               <div className="relative">
                 <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
                   id="merchantId"
                   type="text"
-                  placeholder="Your merchant ID"
+                  placeholder="Your affiliate ID"
                   value={merchantId}
                   onChange={(e) => { setMerchantId(e.target.value); setValidated(false); }}
                   className="pl-10 h-12 bg-card border-border"
                   required
                 />
               </div>
+              {errors.merchantId && <p className="text-sm text-destructive">{errors.merchantId}</p>}
             </div>
 
             <div className="space-y-2">
@@ -180,6 +203,7 @@ export default function Onboarding() {
                   required
                 />
               </div>
+              {errors.apiToken && <p className="text-sm text-destructive">{errors.apiToken}</p>}
             </div>
 
             <div className="space-y-2">
@@ -196,6 +220,7 @@ export default function Onboarding() {
                   required
                 />
               </div>
+              {errors.apiSecret && <p className="text-sm text-destructive">{errors.apiSecret}</p>}
             </div>
 
             {/* Validation Status */}
@@ -213,9 +238,9 @@ export default function Onboarding() {
                   variant="glass" 
                   className="flex-1 h-12" 
                   onClick={validateCredentials}
-                  disabled={validating}
+                  disabled={isValidating}
                 >
-                  {validating ? (
+                  {isValidating ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Validating...
@@ -229,9 +254,9 @@ export default function Onboarding() {
                 type="submit" 
                 variant="hero" 
                 className="flex-1 h-12" 
-                disabled={loading || validating || !validated}
+                disabled={isSubmitting || isValidating || !validated}
               >
-                {loading ? "Setting up..." : "Continue to Dashboard"}
+                {isSubmitting ? "Setting up..." : "Continue to Dashboard"}
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
