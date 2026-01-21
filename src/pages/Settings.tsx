@@ -1,31 +1,74 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   BarChart3, 
-  Settings as SettingsIcon,
   User,
   Link2,
   Shield,
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
-  Trash2
+  Trash2,
+  LogOut,
+  Settings as SettingsIcon,
+  XCircle
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useShareASaleAccount, useDisconnectShareASale, useSyncShareASale } from "@/hooks/useShareASale";
+import { formatDistanceToNow } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Tab = "account" | "connection" | "security";
 
 export default function Settings() {
+  const navigate = useNavigate();
+  const { user, signOut, updatePassword } = useAuth();
+  const { data: profile, isLoading: profileLoading } = useProfile();
+  const { mutate: updateProfile, isPending: updatingProfile } = useUpdateProfile();
+  const { data: shareASaleAccount, isLoading: accountLoading } = useShareASaleAccount();
+  const { mutate: disconnectShareASale, isPending: disconnecting } = useDisconnectShareASale();
+  const { mutate: syncShareASale, isPending: syncing } = useSyncShareASale();
+
   const [activeTab, setActiveTab] = useState<Tab>("account");
-  const [syncing, setSyncing] = useState(false);
   
   // Account form state
-  const [displayName, setDisplayName] = useState("John Doe");
-  const [email, setEmail] = useState("john@example.com");
+  const [displayName, setDisplayName] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
+
+  // Password form state
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.display_name || "");
+      setTimezone(profile.timezone || "America/New_York");
+    }
+  }, [profile]);
 
   const tabs = [
     { id: "account" as Tab, label: "Account", icon: User },
@@ -34,8 +77,46 @@ export default function Settings() {
   ];
 
   const handleSaveAccount = () => {
-    toast.success("Account settings saved");
+    updateProfile({ display_name: displayName, timezone });
   };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+
+    setUpdatingPassword(true);
+    const { error } = await updatePassword(newPassword);
+    setUpdatingPassword(false);
+
+    if (error) {
+      toast.error("Failed to update password: " + error.message);
+    } else {
+      toast.success("Password updated successfully");
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const handleDisconnect = () => {
+    disconnectShareASale();
+  };
+
+  const userInitials = user?.email?.slice(0, 2).toUpperCase() || "U";
+
+  const lastSyncText = shareASaleAccount?.last_sync_at 
+    ? formatDistanceToNow(new Date(shareASaleAccount.last_sync_at), { addSuffix: true })
+    : "Never";
 
   return (
     <div className="min-h-screen bg-background dark">
@@ -60,15 +141,32 @@ export default function Settings() {
             <Button 
               variant="glass" 
               size="sm"
-              onClick={() => { setSyncing(true); setTimeout(() => setSyncing(false), 2000); }}
-              disabled={syncing}
+              onClick={() => syncShareASale()}
+              disabled={syncing || !shareASaleAccount?.is_connected}
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Syncing...' : 'Sync'}
             </Button>
-            <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-accent-foreground">
-              JD
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-accent-foreground cursor-pointer">
+                  {userInitials}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="w-full">
+                    <SettingsIcon className="w-4 h-4 mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -110,47 +208,56 @@ export default function Settings() {
                     <p className="text-sm text-muted-foreground">Update your personal information</p>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="displayName">Display Name</Label>
-                      <Input
-                        id="displayName"
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        className="bg-card border-border max-w-md"
-                      />
+                  {profileLoading ? (
+                    <div className="space-y-4">
+                      <Skeleton className="w-full max-w-md h-10" />
+                      <Skeleton className="w-full max-w-md h-10" />
+                      <Skeleton className="w-full max-w-md h-10" />
                     </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="displayName">Display Name</Label>
+                        <Input
+                          id="displayName"
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          className="bg-card border-border max-w-md"
+                        />
+                      </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="bg-card border-border max-w-md"
-                      />
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={user?.email || ""}
+                          disabled
+                          className="bg-muted border-border max-w-md"
+                        />
+                        <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="timezone">Timezone</Label>
+                        <select
+                          id="timezone"
+                          value={timezone}
+                          onChange={(e) => setTimezone(e.target.value)}
+                          className="w-full max-w-md h-10 rounded-lg bg-card border border-border px-3 text-sm text-foreground"
+                        >
+                          <option value="America/New_York">Eastern Time (ET)</option>
+                          <option value="America/Chicago">Central Time (CT)</option>
+                          <option value="America/Denver">Mountain Time (MT)</option>
+                          <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                          <option value="UTC">UTC</option>
+                        </select>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="timezone">Timezone</Label>
-                      <select
-                        id="timezone"
-                        value={timezone}
-                        onChange={(e) => setTimezone(e.target.value)}
-                        className="w-full max-w-md h-10 rounded-lg bg-card border border-border px-3 text-sm text-foreground"
-                      >
-                        <option value="America/New_York">Eastern Time (ET)</option>
-                        <option value="America/Chicago">Central Time (CT)</option>
-                        <option value="America/Denver">Mountain Time (MT)</option>
-                        <option value="America/Los_Angeles">Pacific Time (PT)</option>
-                        <option value="UTC">UTC</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <Button variant="accent" onClick={handleSaveAccount}>
-                    Save Changes
+                  <Button variant="accent" onClick={handleSaveAccount} disabled={updatingProfile}>
+                    {updatingProfile ? "Saving..." : "Save Changes"}
                   </Button>
                 </div>
               )}
@@ -162,43 +269,87 @@ export default function Settings() {
                     <p className="text-sm text-muted-foreground">Manage your ShareASale API connection</p>
                   </div>
 
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-success/10 border border-success/20">
-                    <CheckCircle2 className="w-5 h-5 text-success" />
-                    <div>
-                      <p className="font-medium text-foreground">Connected</p>
-                      <p className="text-sm text-muted-foreground">Last synced 5 minutes ago</p>
+                  {accountLoading ? (
+                    <div className="space-y-4">
+                      <Skeleton className="w-full h-16 rounded-lg" />
+                      <Skeleton className="w-full max-w-md h-10" />
+                      <Skeleton className="w-full max-w-md h-10" />
                     </div>
-                  </div>
+                  ) : shareASaleAccount?.is_connected ? (
+                    <>
+                      <div className="flex items-center gap-3 p-4 rounded-lg bg-success/10 border border-success/20">
+                        <CheckCircle2 className="w-5 h-5 text-success" />
+                        <div>
+                          <p className="font-medium text-foreground">Connected</p>
+                          <p className="text-sm text-muted-foreground">Last synced {lastSyncText}</p>
+                        </div>
+                      </div>
 
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Merchant ID</Label>
-                      <Input
-                        value="•••••••1234"
-                        disabled
-                        className="bg-muted border-border max-w-md"
-                      />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Merchant ID</Label>
+                          <Input
+                            value={shareASaleAccount.merchant_id ? `•••••••${shareASaleAccount.merchant_id.slice(-4)}` : "••••••••"}
+                            disabled
+                            className="bg-muted border-border max-w-md"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>Sync Status</Label>
+                          <Input
+                            value={shareASaleAccount.sync_status || "Unknown"}
+                            disabled
+                            className="bg-muted border-border max-w-md capitalize"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3">
+                        <Button variant="glass" onClick={() => syncShareASale()} disabled={syncing}>
+                          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                          {syncing ? 'Syncing...' : 'Sync Now'}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" className="text-destructive hover:text-destructive">
+                              Disconnect
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Disconnect ShareASale?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will remove your ShareASale connection and delete all cached transaction data. You can reconnect anytime.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={handleDisconnect}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                {disconnecting ? "Disconnecting..." : "Disconnect"}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 p-4 rounded-lg bg-warning/10 border border-warning/20">
+                        <XCircle className="w-5 h-5 text-warning" />
+                        <div>
+                          <p className="font-medium text-foreground">Not Connected</p>
+                          <p className="text-sm text-muted-foreground">Connect your ShareASale account to start tracking</p>
+                        </div>
+                      </div>
+                      <Button variant="accent" onClick={() => navigate("/onboarding")}>
+                        Connect ShareASale
+                      </Button>
                     </div>
-
-                    <div className="space-y-2">
-                      <Label>API Token</Label>
-                      <Input
-                        value="•••••••••••••••••••••••••"
-                        disabled
-                        className="bg-muted border-border max-w-md"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button variant="glass">
-                      <RefreshCw className="w-4 h-4" />
-                      Test Connection
-                    </Button>
-                    <Button variant="outline" className="text-destructive hover:text-destructive">
-                      Disconnect
-                    </Button>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -212,21 +363,13 @@ export default function Settings() {
 
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Current Password</Label>
-                        <Input
-                          id="currentPassword"
-                          type="password"
-                          placeholder="••••••••"
-                          className="bg-card border-border max-w-md"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
                         <Label htmlFor="newPassword">New Password</Label>
                         <Input
                           id="newPassword"
                           type="password"
                           placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
                           className="bg-card border-border max-w-md"
                         />
                       </div>
@@ -237,12 +380,20 @@ export default function Settings() {
                           id="confirmPassword"
                           type="password"
                           placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
                           className="bg-card border-border max-w-md"
                         />
                       </div>
                     </div>
 
-                    <Button variant="accent">Update Password</Button>
+                    <Button 
+                      variant="accent" 
+                      onClick={handleUpdatePassword}
+                      disabled={updatingPassword || !newPassword || !confirmPassword}
+                    >
+                      {updatingPassword ? "Updating..." : "Update Password"}
+                    </Button>
                   </div>
 
                   <div className="glass rounded-xl p-6 space-y-4 border border-destructive/20">
@@ -250,10 +401,31 @@ export default function Settings() {
                       <h2 className="text-lg font-semibold text-destructive mb-1">Danger Zone</h2>
                       <p className="text-sm text-muted-foreground">Permanently delete your account and all data</p>
                     </div>
-                    <Button variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                      <Trash2 className="w-4 h-4" />
-                      Delete Account
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                          <Trash2 className="w-4 h-4" />
+                          Delete Account
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete your account?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={() => toast.error("Account deletion requires contacting support")}
+                          >
+                            Delete Account
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               )}
