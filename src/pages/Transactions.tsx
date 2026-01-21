@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   BarChart3, 
   Search, 
@@ -10,31 +11,95 @@ import {
   ChevronRight,
   Settings,
   Calendar,
-  RefreshCw
+  RefreshCw,
+  LogOut,
+  AlertCircle
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTransactions, TransactionFilters } from "@/hooks/useTransactions";
+import { useSyncShareASale, useShareASaleAccount } from "@/hooks/useShareASale";
+import { format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const transactions = [
-  { id: "TXN-001", merchant: "Amazon Associates", amount: "$127.50", clicks: 342, date: "Jan 15, 2026", status: "Paid" },
-  { id: "TXN-002", merchant: "Nike Affiliate", amount: "$89.99", clicks: 156, date: "Jan 14, 2026", status: "Pending" },
-  { id: "TXN-003", merchant: "Best Buy Partners", amount: "$234.00", clicks: 498, date: "Jan 13, 2026", status: "Paid" },
-  { id: "TXN-004", merchant: "Walmart Affiliates", amount: "$56.25", clicks: 89, date: "Jan 12, 2026", status: "Paid" },
-  { id: "TXN-005", merchant: "Target Partners", amount: "$178.90", clicks: 267, date: "Jan 11, 2026", status: "Pending" },
-  { id: "TXN-006", merchant: "Home Depot Affiliates", amount: "$312.45", clicks: 412, date: "Jan 10, 2026", status: "Paid" },
-  { id: "TXN-007", merchant: "Nordstrom Partners", amount: "$94.30", clicks: 178, date: "Jan 9, 2026", status: "Paid" },
-  { id: "TXN-008", merchant: "Sephora Affiliates", amount: "$67.80", clicks: 134, date: "Jan 8, 2026", status: "Voided" },
-  { id: "TXN-009", merchant: "REI Partners", amount: "$145.00", clicks: 289, date: "Jan 7, 2026", status: "Paid" },
-  { id: "TXN-010", merchant: "Wayfair Affiliates", amount: "$223.15", clicks: 367, date: "Jan 6, 2026", status: "Pending" },
-];
+const PAGE_SIZE = 10;
 
 export default function Transactions() {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [search, setSearch] = useState("");
-  const [syncing, setSyncing] = useState(false);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
 
-  const filteredTransactions = transactions.filter(tx => 
-    tx.merchant.toLowerCase().includes(search.toLowerCase()) ||
-    tx.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const { data: shareASaleAccount } = useShareASaleAccount();
+  const { mutate: syncShareASale, isPending: syncing } = useSyncShareASale();
+
+  // Debounce search
+  useMemo(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const filters: TransactionFilters = {
+    search: debouncedSearch,
+    status: statusFilter,
+    page,
+    pageSize: PAGE_SIZE,
+  };
+
+  const { data: transactionsData, isLoading } = useTransactions(filters);
+
+  const transactions = transactionsData?.data || [];
+  const totalCount = transactionsData?.count || 0;
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const handleExportCSV = () => {
+    if (!transactions.length) return;
+
+    const headers = ["Transaction ID", "Merchant", "Amount", "Commission", "Clicks", "Date", "Status"];
+    const rows = transactions.map(tx => [
+      tx.transaction_id,
+      tx.merchant_name || "Unknown",
+      tx.amount,
+      tx.commission || 0,
+      tx.clicks,
+      format(new Date(tx.transaction_date), "yyyy-MM-dd"),
+      tx.status
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map(row => row.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `transactions-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    link.click();
+  };
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -48,6 +113,23 @@ export default function Transactions() {
         return "bg-muted text-muted-foreground";
     }
   };
+
+  const userInitials = user?.email?.slice(0, 2).toUpperCase() || "U";
+
+  if (!shareASaleAccount?.is_connected) {
+    return (
+      <div className="min-h-screen bg-background dark flex items-center justify-center">
+        <div className="glass rounded-xl p-8 max-w-md text-center space-y-4">
+          <AlertCircle className="w-12 h-12 text-warning mx-auto" />
+          <h2 className="text-xl font-bold text-foreground">Connect ShareASale</h2>
+          <p className="text-muted-foreground">You need to connect your ShareASale account to view transactions.</p>
+          <Button variant="accent" onClick={() => navigate("/onboarding")}>
+            Connect Now
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background dark">
@@ -72,18 +154,37 @@ export default function Transactions() {
             <Button 
               variant="glass" 
               size="sm" 
-              onClick={() => { setSyncing(true); setTimeout(() => setSyncing(false), 2000); }}
+              onClick={() => syncShareASale()}
               disabled={syncing}
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? 'Syncing...' : 'Sync'}
             </Button>
-            <Button variant="ghost" size="icon">
-              <Settings className="w-4 h-4" />
-            </Button>
-            <div className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-accent-foreground">
-              JD
-            </div>
+            <Link to="/settings">
+              <Button variant="ghost" size="icon">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-accent-foreground cursor-pointer">
+                  {userInitials}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="w-full">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>
@@ -96,7 +197,7 @@ export default function Transactions() {
             <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
             <p className="text-muted-foreground">View and export all your affiliate transactions.</p>
           </div>
-          <Button variant="accent" size="sm">
+          <Button variant="accent" size="sm" onClick={handleExportCSV} disabled={!transactions.length}>
             <Download className="w-4 h-4" />
             Export CSV
           </Button>
@@ -114,14 +215,18 @@ export default function Transactions() {
             />
           </div>
           <div className="flex gap-2">
-            <Button variant="glass" size="sm">
-              <Calendar className="w-4 h-4" />
-              Date Range
-            </Button>
-            <Button variant="glass" size="sm">
-              <Filter className="w-4 h-4" />
-              Filter
-            </Button>
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setPage(1); }}>
+              <SelectTrigger className="w-[140px] bg-card border-border">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Paid">Paid</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Voided">Voided</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
@@ -140,20 +245,43 @@ export default function Transactions() {
                 </tr>
               </thead>
               <tbody>
-                {filteredTransactions.map((tx) => (
-                  <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                    <td className="p-4 text-sm font-mono text-foreground">{tx.id}</td>
-                    <td className="p-4 text-sm text-foreground font-medium">{tx.merchant}</td>
-                    <td className="p-4 text-sm text-foreground font-semibold">{tx.amount}</td>
-                    <td className="p-4 text-sm text-muted-foreground">{tx.clicks.toLocaleString()}</td>
-                    <td className="p-4 text-sm text-muted-foreground">{tx.date}</td>
-                    <td className="p-4">
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getStatusStyle(tx.status)}`}>
-                        {tx.status}
-                      </span>
+                {isLoading ? (
+                  Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                    <tr key={i} className="border-b border-border/50">
+                      <td className="p-4"><Skeleton className="w-24 h-4" /></td>
+                      <td className="p-4"><Skeleton className="w-32 h-4" /></td>
+                      <td className="p-4"><Skeleton className="w-16 h-4" /></td>
+                      <td className="p-4"><Skeleton className="w-12 h-4" /></td>
+                      <td className="p-4"><Skeleton className="w-24 h-4" /></td>
+                      <td className="p-4"><Skeleton className="w-16 h-5 rounded-full" /></td>
+                    </tr>
+                  ))
+                ) : transactions.length > 0 ? (
+                  transactions.map((tx) => (
+                    <tr key={tx.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
+                      <td className="p-4 text-sm font-mono text-foreground">{tx.transaction_id}</td>
+                      <td className="p-4 text-sm text-foreground font-medium">{tx.merchant_name || 'Unknown'}</td>
+                      <td className="p-4 text-sm text-foreground font-semibold">
+                        ${Number(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="p-4 text-sm text-muted-foreground">{tx.clicks.toLocaleString()}</td>
+                      <td className="p-4 text-sm text-muted-foreground">
+                        {format(new Date(tx.transaction_date), "MMM d, yyyy")}
+                      </td>
+                      <td className="p-4">
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getStatusStyle(tx.status)}`}>
+                          {tx.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                      No transactions found
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
@@ -161,14 +289,27 @@ export default function Transactions() {
           {/* Pagination */}
           <div className="flex items-center justify-between p-4 border-t border-border">
             <p className="text-sm text-muted-foreground">
-              Showing 1-10 of 247 transactions
+              {totalCount > 0 
+                ? `Showing ${(page - 1) * PAGE_SIZE + 1}-${Math.min(page * PAGE_SIZE, totalCount)} of ${totalCount} transactions`
+                : 'No transactions'
+              }
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="glass" size="sm" disabled>
+              <Button 
+                variant="glass" 
+                size="sm" 
+                disabled={page <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+              >
                 <ChevronLeft className="w-4 h-4" />
                 Previous
               </Button>
-              <Button variant="glass" size="sm">
+              <Button 
+                variant="glass" 
+                size="sm"
+                disabled={page >= totalPages}
+                onClick={() => setPage(p => p + 1)}
+              >
                 Next
                 <ChevronRight className="w-4 h-4" />
               </Button>
