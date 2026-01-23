@@ -140,6 +140,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_cache_shareasale_account_id_fkey"
+            columns: ["shareasale_account_id"]
+            isOneToOne: false
+            referencedRelation: "shareasale_accounts_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_cache_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -150,7 +157,47 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      shareasale_accounts_public: {
+        Row: {
+          created_at: string | null
+          id: string | null
+          is_connected: boolean | null
+          last_sync_at: string | null
+          merchant_id: string | null
+          sync_status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string | null
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          merchant_id?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string | null
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          merchant_id?: string | null
+          sync_status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shareasale_accounts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never

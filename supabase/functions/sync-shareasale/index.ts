@@ -1,14 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCors } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const corsResponse = handleCors(req);
+  if (corsResponse) return corsResponse;
+  
+  const corsHeaders = getCorsHeaders(req);
 
   try {
     const authHeader = req.headers.get("Authorization");
@@ -37,8 +34,14 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub;
 
-    // Get user's ShareASale account
-    const { data: account, error: accountError } = await supabase
+    // Use service role to access credentials (bypasses RLS)
+    const serviceSupabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Get user's ShareASale account with credentials (server-side only)
+    const { data: account, error: accountError } = await serviceSupabase
       .from("shareasale_accounts")
       .select("*")
       .eq("user_id", userId)
@@ -52,7 +55,7 @@ Deno.serve(async (req) => {
     }
 
     // Update sync status to syncing
-    await supabase
+    await serviceSupabase
       .from("shareasale_accounts")
       .update({ sync_status: "syncing" })
       .eq("id", account.id);
@@ -79,7 +82,7 @@ Deno.serve(async (req) => {
       // Call ShareASale Activity API
       const apiUrl = `https://api.shareasale.com/w.cfm?affiliateId=${account.merchant_id}&token=${account.api_token_encrypted}&version=${version}&action=${action}&dateStart=${formatDate(startDate)}&dateEnd=${formatDate(endDate)}`;
 
-      let transactions: any[] = [];
+      const transactions: any[] = [];
 
       try {
         const response = await fetch(apiUrl, {
@@ -111,27 +114,24 @@ Deno.serve(async (req) => {
         console.log("ShareASale API unavailable");
       }
 
-      // If no real data, generate demo transactions
+      // If no transactions returned, update status and return error - do NOT generate fake data
       if (transactions.length === 0) {
-        const merchants = ["Amazon Associates", "Nike Affiliate", "Best Buy Partners", "Walmart Affiliates", "Target Partners", "Home Depot Affiliates", "Nordstrom Partners", "Sephora Affiliates", "REI Partners", "Wayfair Affiliates"];
-        const statuses = ["Paid", "Pending", "Voided"];
-        
-        for (let i = 0; i < 50; i++) {
-          const daysAgo = Math.floor(Math.random() * 30);
-          const txDate = new Date();
-          txDate.setDate(txDate.getDate() - daysAgo);
-          
-          transactions.push({
-            transactionId: `TXN-${String(i + 1).padStart(3, "0")}`,
-            merchantName: merchants[Math.floor(Math.random() * merchants.length)],
-            amount: (Math.random() * 300 + 20).toFixed(2),
-            commission: (Math.random() * 50 + 5).toFixed(2),
-            clicks: Math.floor(Math.random() * 500) + 50,
-            status: statuses[Math.floor(Math.random() * statuses.length)],
-            transactionDate: txDate.toISOString(),
-            clickDate: new Date(txDate.getTime() - Math.random() * 86400000 * 7).toISOString(),
-          });
-        }
+        await serviceSupabase
+          .from("shareasale_accounts")
+          .update({ 
+            sync_status: "completed",
+            last_sync_at: new Date().toISOString()
+          })
+          .eq("id", account.id);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "No transactions found for the last 30 days",
+            transactionCount: 0,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
 
       // Upsert transactions
@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
       }));
 
       if (formattedTransactions.length > 0) {
-        const { error: upsertError } = await supabase
+        const { error: upsertError } = await serviceSupabase
           .from("transactions_cache")
           .upsert(formattedTransactions, {
             onConflict: "shareasale_account_id,transaction_id",
@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
       }
 
       // Update account with sync info
-      await supabase
+      await serviceSupabase
         .from("shareasale_accounts")
         .update({
           last_sync_at: new Date().toISOString(),
@@ -179,9 +179,9 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (syncError) {
-      console.error("Sync error:", syncError);
+      console.error("Sync error");
       
-      await supabase
+      await serviceSupabase
         .from("shareasale_accounts")
         .update({ sync_status: "failed" })
         .eq("id", account.id);
@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
       );
     }
   } catch (error) {
-    console.error("Handler error:", error);
+    console.error("Handler error");
     return new Response(
       JSON.stringify({ success: false, message: "Internal error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
