@@ -30,7 +30,7 @@ export function HowItWorksSection() {
 
       <div className="container mx-auto px-4">
         <div className="text-center max-w-2xl mx-auto mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-3xl md:text-4xl font-display font-semibold text-foreground mb-4">
             Get started in
             <br />
             <span className="gradient-text">three simple steps</span>
@@ -49,14 +49,14 @@ export function HowItWorksSection() {
             >
               {/* Connector Line */}
               {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-12 left-1/2 w-full h-px bg-gradient-to-r from-accent/50 to-transparent" />
+                <div className="hidden md:block absolute top-12 left-1/2 w-full h-px bg-gradient-to-r from-primary/50 to-transparent" />
               )}
 
               <div className="relative inline-flex">
                 <div className="w-24 h-24 rounded-2xl glass flex items-center justify-center mb-6 mx-auto glow-sm">
-                  <step.icon className="w-10 h-10 text-accent" />
+                  <step.icon className="w-10 h-10 text-primary" />
                 </div>
-                <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-accent-foreground">
+                <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
                   {step.step}
                 </span>
               </div>
