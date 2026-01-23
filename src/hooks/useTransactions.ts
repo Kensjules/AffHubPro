@@ -40,7 +40,9 @@ export function useTransactions(filters: TransactionFilters = {}) {
         .order("transaction_date", { ascending: false });
 
       if (search) {
-        query = query.or(`merchant_name.ilike.%${search}%,transaction_id.ilike.%${search}%`);
+        // Sanitize search input: limit length and escape ILIKE special characters
+        const sanitized = search.trim().substring(0, 100).replace(/[%_\\]/g, '\\$&');
+        query = query.or(`merchant_name.ilike.%${sanitized}%,transaction_id.ilike.%${sanitized}%`);
       }
 
       if (status && status !== "all") {
