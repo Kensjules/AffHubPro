@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
           }
         }
       } catch (apiError) {
-        console.log("ShareASale API unavailable, using demo data");
+        console.log("ShareASale API unavailable");
       }
 
       // If no real data, generate demo transactions
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
           });
 
         if (upsertError) {
-          console.error("Upsert error:", upsertError);
+          console.error("Transaction upsert failed");
         }
       }
 

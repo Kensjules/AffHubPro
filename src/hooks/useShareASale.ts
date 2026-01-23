@@ -64,22 +64,19 @@ export function useConnectShareASale() {
         throw new Error(validationResult?.message || "Invalid ShareASale credentials");
       }
 
-      // Store the credentials
-      const { data, error } = await supabase
-        .from("shareasale_accounts")
-        .upsert({
-          user_id: user.id,
-          merchant_id: merchantId,
-          api_token_encrypted: apiToken,
-          api_secret_encrypted: apiSecret,
-          is_connected: true,
-          sync_status: "pending",
-        })
-        .select()
-        .single();
+      // Call edge function to store credentials server-side
+      const { data: storeResult, error: storeError } = await supabase.functions.invoke(
+        "store-shareasale-credentials",
+        {
+          body: { merchantId, apiToken, apiSecret },
+        }
+      );
 
-      if (error) throw error;
-      return data;
+      if (storeError) throw storeError;
+      if (!storeResult?.success) {
+        throw new Error(storeResult?.message || "Failed to store credentials");
+      }
+      return storeResult.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shareasale-account"] });

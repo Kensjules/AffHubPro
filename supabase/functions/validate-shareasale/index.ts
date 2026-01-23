@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
 
       // Check for error responses from ShareASale
       if (responseText.includes("Error") || responseText.includes("Invalid") || response.status !== 200) {
-        console.log("ShareASale validation failed:", responseText);
+        console.log("ShareASale validation failed");
         return new Response(
           JSON.stringify({ 
             valid: false, 
@@ -96,11 +96,14 @@ Deno.serve(async (req) => {
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } catch (apiError) {
-      console.error("ShareASale API error:", apiError);
-      // For demo purposes, accept credentials if API is unreachable
+      console.error("ShareASale API connection failed");
+      // Do NOT accept credentials when API is unreachable - require successful validation
       return new Response(
-        JSON.stringify({ valid: true, message: "Credentials accepted (API validation skipped)" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ 
+          valid: false, 
+          message: "Unable to reach ShareASale API. Please try again later." 
+        }),
+        { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
   } catch (error) {
