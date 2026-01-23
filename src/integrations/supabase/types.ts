@@ -200,7 +200,19 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_my_shareasale_account: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          is_connected: boolean
+          last_sync_at: string
+          merchant_id: string
+          sync_status: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
