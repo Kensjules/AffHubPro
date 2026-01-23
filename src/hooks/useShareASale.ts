@@ -22,9 +22,10 @@ export function useShareASaleAccount() {
     queryFn: async () => {
       if (!user?.id) return null;
 
+      // Use the secure view that excludes API credentials
       const { data, error } = await supabase
-        .from("shareasale_accounts")
-        .select("id, user_id, merchant_id, is_connected, last_sync_at, sync_status, created_at, updated_at")
+        .from("shareasale_accounts_public")
+        .select("*")
         .eq("user_id", user.id)
         .maybeSingle();
 

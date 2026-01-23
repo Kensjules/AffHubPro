@@ -40,9 +40,15 @@ export function useTransactions(filters: TransactionFilters = {}) {
         .order("transaction_date", { ascending: false });
 
       if (search) {
-        // Sanitize search input: limit length and escape ILIKE special characters
-        const sanitized = search.trim().substring(0, 100).replace(/[%_\\]/g, '\\$&');
-        query = query.or(`merchant_name.ilike.%${sanitized}%,transaction_id.ilike.%${sanitized}%`);
+        // Sanitize search input: limit length, validate characters, and escape ILIKE special characters
+        const trimmed = search.trim().substring(0, 50);
+        // Allow only alphanumeric, spaces, hyphens, and underscores
+        if (!/^[a-zA-Z0-9\s\-_]*$/.test(trimmed)) {
+          return { data: [], count: 0 }; // Invalid search query
+        }
+        const sanitized = trimmed.replace(/[%_\\]/g, '\\$&');
+        // Use suffix-only wildcard for better performance
+        query = query.or(`merchant_name.ilike.${sanitized}%,transaction_id.ilike.${sanitized}%`);
       }
 
       if (status && status !== "all") {
