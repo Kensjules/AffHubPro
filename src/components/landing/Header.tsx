@@ -11,7 +11,7 @@ export function Header() {
             <span className="text-primary-foreground font-bold text-sm">A</span>
           </div>
           <span className="font-display font-semibold text-lg text-foreground">
-            Aff<span className="text-muted-foreground">Hub</span>HQ
+            Aff<span className="text-muted-foreground">Hub</span>Pro
           </span>
         </Link>
 

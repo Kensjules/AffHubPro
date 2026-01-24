@@ -21,7 +21,7 @@ export function Footer() {
           </nav>
 
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AffHubHQ. All rights reserved.
+            © {new Date().getFullYear()} AffHubPro. All rights reserved.
           </p>
         </div>
       </div>
