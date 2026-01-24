@@ -128,7 +128,7 @@ export default function Settings() {
               <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center glow-sm">
                 <BarChart3 className="w-4 h-4 text-accent-foreground" />
               </div>
-              <span className="font-bold text-lg text-foreground">AffiliateHub</span>
+              <span className="font-bold text-lg text-foreground">AffHubPro</span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
               <Link to="/dashboard" className="nav-link">Dashboard</Link>

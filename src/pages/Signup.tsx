@@ -78,7 +78,7 @@ export default function Signup() {
             <span className="gradient-text">affiliate success</span>
           </h2>
           <p className="text-muted-foreground mb-8">
-            Join thousands of affiliate marketers who use AffiliateHub to monitor their earnings.
+            Join thousands of affiliate marketers who use AffHubPro to monitor their earnings.
           </p>
           <div className="space-y-4">
             {benefits.map((benefit) => (
@@ -101,7 +101,7 @@ export default function Signup() {
             <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center glow-sm">
               <BarChart3 className="w-5 h-5 text-accent-foreground" />
             </div>
-            <span className="font-bold text-xl text-foreground">AffiliateHub</span>
+            <span className="font-bold text-xl text-foreground">AffHubPro</span>
           </Link>
 
           {/* Header */}

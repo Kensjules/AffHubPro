@@ -116,7 +116,7 @@ export default function Dashboard() {
                 <span className="text-primary-foreground font-bold text-sm">A</span>
               </div>
               <span className="font-display font-semibold text-lg text-foreground">
-                Aff<span className="text-muted-foreground">Hub</span>HQ
+                Aff<span className="text-muted-foreground">Hub</span>Pro
               </span>
             </Link>
             <nav className="hidden md:flex items-center gap-6">
