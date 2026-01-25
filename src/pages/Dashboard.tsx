@@ -111,30 +111,30 @@ export default function Dashboard() {
             <>
               <StatsCard
                 title="Total Revenue"
-                value={`$${(metrics?.totalEarnings || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                value={`$${(metrics?.totalRevenue || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 icon={DollarSign}
                 highlight
                 trend={metrics ? {
-                  value: `${metrics.earningsChange >= 0 ? '+' : ''}${metrics.earningsChange}%`,
-                  positive: metrics.earningsChange >= 0
+                  value: `${metrics.revenueChange >= 0 ? '+' : ''}${metrics.revenueChange}%`,
+                  positive: metrics.revenueChange >= 0
                 } : undefined}
               />
               <StatsCard
                 title="Pending Payouts"
-                value={`$${(metrics?.avgCommission || 0).toFixed(2)}`}
+                value={`$${(metrics?.pendingPayouts || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                 icon={Clock}
                 trend={metrics ? {
-                  value: `${metrics.commissionChange >= 0 ? '+' : ''}${metrics.commissionChange}%`,
-                  positive: metrics.commissionChange >= 0
+                  value: `${metrics.pendingChange >= 0 ? '+' : ''}${metrics.pendingChange}%`,
+                  positive: metrics.pendingChange >= 0
                 } : undefined}
               />
               <StatsCard
                 title="Active Stores"
-                value={`${metrics?.totalConversions || 0}`}
+                value={`${metrics?.activeStores || 0}`}
                 icon={Store}
                 trend={metrics ? {
-                  value: `${metrics.conversionsChange >= 0 ? '+' : ''}${metrics.conversionsChange}%`,
-                  positive: metrics.conversionsChange >= 0
+                  value: `${metrics.storesChange >= 0 ? '+' : ''}${metrics.storesChange}%`,
+                  positive: metrics.storesChange >= 0
                 } : undefined}
               />
             </>

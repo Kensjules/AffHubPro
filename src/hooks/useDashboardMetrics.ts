@@ -4,14 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { subDays, startOfDay, format } from "date-fns";
 
 export interface DashboardMetrics {
-  totalEarnings: number;
-  totalClicks: number;
-  totalConversions: number;
-  avgCommission: number;
-  earningsChange: number;
-  clicksChange: number;
-  conversionsChange: number;
-  commissionChange: number;
+  totalRevenue: number;
+  pendingPayouts: number;
+  activeStores: number;
+  revenueChange: number;
+  pendingChange: number;
+  storesChange: number;
 }
 
 export interface ChartDataPoint {
@@ -27,48 +25,56 @@ export function useDashboardMetrics() {
     queryFn: async (): Promise<DashboardMetrics> => {
       if (!user?.id) {
         return {
-          totalEarnings: 0,
-          totalClicks: 0,
-          totalConversions: 0,
-          avgCommission: 0,
-          earningsChange: 0,
-          clicksChange: 0,
-          conversionsChange: 0,
-          commissionChange: 0,
+          totalRevenue: 0,
+          pendingPayouts: 0,
+          activeStores: 0,
+          revenueChange: 0,
+          pendingChange: 0,
+          storesChange: 0,
         };
       }
 
       const thirtyDaysAgo = subDays(new Date(), 30);
       const sixtyDaysAgo = subDays(new Date(), 60);
 
-      // Get current period data
+      // Get current period data (last 30 days)
       const { data: currentData, error: currentError } = await supabase
         .from("transactions_cache")
-        .select("amount, commission, clicks, status")
+        .select("commission, status, merchant_name")
         .eq("user_id", user.id)
         .gte("transaction_date", thirtyDaysAgo.toISOString());
 
       if (currentError) throw currentError;
 
-      // Get previous period data for comparison
+      // Get previous period data for comparison (30-60 days ago)
       const { data: previousData, error: previousError } = await supabase
         .from("transactions_cache")
-        .select("amount, commission, clicks, status")
+        .select("commission, status, merchant_name")
         .eq("user_id", user.id)
         .gte("transaction_date", sixtyDaysAgo.toISOString())
         .lt("transaction_date", thirtyDaysAgo.toISOString());
 
       if (previousError) throw previousError;
 
+      // Get all-time data for total revenue and active stores
+      const { data: allTimeData, error: allTimeError } = await supabase
+        .from("transactions_cache")
+        .select("commission, status, merchant_name")
+        .eq("user_id", user.id);
+
+      if (allTimeError) throw allTimeError;
+
       const current = calculateMetrics(currentData || []);
       const previous = calculateMetrics(previousData || []);
+      const allTime = calculateMetrics(allTimeData || []);
 
       return {
-        ...current,
-        earningsChange: calculateChange(current.totalEarnings, previous.totalEarnings),
-        clicksChange: calculateChange(current.totalClicks, previous.totalClicks),
-        conversionsChange: calculateChange(current.totalConversions, previous.totalConversions),
-        commissionChange: calculateChange(current.avgCommission, previous.avgCommission),
+        totalRevenue: allTime.totalRevenue,
+        pendingPayouts: allTime.pendingPayouts,
+        activeStores: allTime.activeStores,
+        revenueChange: calculateChange(current.totalRevenue, previous.totalRevenue),
+        pendingChange: calculateChange(current.pendingPayouts, previous.pendingPayouts),
+        storesChange: calculateChange(current.activeStores, previous.activeStores),
       };
     },
     enabled: !!user?.id,
@@ -118,14 +124,26 @@ export function useEarningsChart() {
   });
 }
 
-function calculateMetrics(data: Array<{ amount: number; commission: number | null; clicks: number; status: string }>) {
-  const totalEarnings = data.reduce((sum, tx) => sum + Number(tx.amount || 0), 0);
-  const totalClicks = data.reduce((sum, tx) => sum + (tx.clicks || 0), 0);
-  const totalConversions = data.filter((tx) => tx.status === "Paid").length;
-  const commissions = data.filter((tx) => tx.commission != null).map((tx) => Number(tx.commission));
-  const avgCommission = commissions.length > 0 ? commissions.reduce((a, b) => a + b, 0) / commissions.length : 0;
+function calculateMetrics(data: Array<{ commission: number | null; status: string; merchant_name: string | null }>) {
+  // Total revenue = sum of all commissions (paid/locked transactions)
+  const totalRevenue = data
+    .filter((tx) => tx.status?.toLowerCase() === "paid" || tx.status?.toLowerCase() === "locked")
+    .reduce((sum, tx) => sum + Number(tx.commission || 0), 0);
 
-  return { totalEarnings, totalClicks, totalConversions, avgCommission };
+  // Pending payouts = sum of commissions where status is pending
+  const pendingPayouts = data
+    .filter((tx) => tx.status?.toLowerCase() === "pending")
+    .reduce((sum, tx) => sum + Number(tx.commission || 0), 0);
+
+  // Active stores = count of distinct merchant names
+  const uniqueMerchants = new Set(
+    data
+      .filter((tx) => tx.merchant_name)
+      .map((tx) => tx.merchant_name)
+  );
+  const activeStores = uniqueMerchants.size;
+
+  return { totalRevenue, pendingPayouts, activeStores };
 }
 
 function calculateChange(current: number, previous: number): number {
