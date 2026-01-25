@@ -8,7 +8,7 @@ export interface Transaction {
   merchant_name: string | null;
   amount: number;
   commission: number | null;
-  clicks: number;
+  clicks: number | null;
   status: string;
   transaction_date: string;
   click_date: string | null;
