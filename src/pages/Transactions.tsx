@@ -84,7 +84,7 @@ export default function Transactions() {
       tx.merchant_name || "Unknown",
       tx.amount,
       tx.commission || 0,
-      tx.clicks,
+      tx.clicks || 0,
       format(new Date(tx.transaction_date), "yyyy-MM-dd"),
       tx.status
     ]);
@@ -264,7 +264,7 @@ export default function Transactions() {
                       <td className="p-4 text-sm text-foreground font-semibold">
                         ${Number(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className="p-4 text-sm text-muted-foreground">{tx.clicks.toLocaleString()}</td>
+                      <td className="p-4 text-sm text-muted-foreground">{(tx.clicks || 0).toLocaleString()}</td>
                       <td className="p-4 text-sm text-muted-foreground">
                         {format(new Date(tx.transaction_date), "MMM d, yyyy")}
                       </td>
