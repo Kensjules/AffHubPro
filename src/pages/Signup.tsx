@@ -6,6 +6,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { BarChart3, Mail, Lock, User, ArrowRight, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
 const benefits = [
@@ -56,10 +57,21 @@ export default function Signup() {
     
     if (error) {
       toast.error(error.message || "Failed to create account");
-    } else {
-      toast.success("Account created! Let's connect your ShareASale account.");
-      navigate("/onboarding");
+      setLoading(false);
+      return;
     }
+    
+    // Send welcome email (fire and forget - don't block user flow)
+    supabase.functions.invoke("send-email", {
+      body: {
+        type: "welcome",
+        to: email,
+        data: { name },
+      },
+    }).catch((err) => console.error("Failed to send welcome email:", err));
+    
+    toast.success("Account created! Let's connect your ShareASale account.");
+    navigate("/onboarding");
     setLoading(false);
   };
 
