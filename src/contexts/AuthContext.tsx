@@ -49,16 +49,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, displayName: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: "https://affhubpro.com/dashboard",
         data: {
           display_name: displayName,
         },
       },
     });
+
+    // Send welcome email if signup successful
+    if (!error && data?.user) {
+      try {
+        await supabase.functions.invoke("send-email", {
+          body: {
+            type: "welcome",
+            to: email,
+            data: { name: displayName },
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send welcome email:", emailError);
+        // Don't fail signup if email fails
+      }
+    }
+
     return { error: error as Error | null };
   };
 
@@ -68,8 +85,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: "https://affhubpro.com/reset-password",
     });
+
+    // Send custom password reset email
+    if (!error) {
+      try {
+        // Get the reset link from Supabase - the user will receive both emails
+        // We use our custom template for branding
+        await supabase.functions.invoke("send-email", {
+          body: {
+            type: "password_reset",
+            to: email,
+            data: { resetLink: "https://affhubpro.com/reset-password" },
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send custom password reset email:", emailError);
+        // Supabase default email will still be sent
+      }
+    }
+
     return { error: error as Error | null };
   };
 
