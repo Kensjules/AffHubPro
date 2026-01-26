@@ -3,30 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  BarChart3, 
   Search, 
   Download, 
   Filter,
   ChevronLeft,
   ChevronRight,
-  Settings,
-  Calendar,
   RefreshCw,
-  LogOut,
   AlertCircle
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import { useTransactions, TransactionFilters } from "@/hooks/useTransactions";
 import { useSyncShareASale, useShareASaleAccount } from "@/hooks/useShareASale";
-import { format } from "date-fns";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { format, formatDistanceToNow } from "date-fns";
+import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import {
   Select,
   SelectContent,
@@ -39,7 +28,6 @@ const PAGE_SIZE = 10;
 
 export default function Transactions() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -69,11 +57,6 @@ export default function Transactions() {
   const transactions = transactionsData?.data || [];
   const totalCount = transactionsData?.count || 0;
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/");
-  };
 
   const handleExportCSV = () => {
     if (!transactions.length) return;
@@ -114,16 +97,20 @@ export default function Transactions() {
     }
   };
 
-  const userInitials = user?.email?.slice(0, 2).toUpperCase() || "U";
+  const lastSyncText = shareASaleAccount?.last_sync_at 
+    ? formatDistanceToNow(new Date(shareASaleAccount.last_sync_at), { addSuffix: true })
+    : "Never";
 
   if (!shareASaleAccount?.is_connected) {
     return (
-      <div className="min-h-screen bg-background dark flex items-center justify-center">
-        <div className="glass rounded-xl p-8 max-w-md text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-warning mx-auto" />
-          <h2 className="text-xl font-bold text-foreground">Connect ShareASale</h2>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="glass rounded-xl p-8 max-w-md text-center space-y-4 animate-fade-in">
+          <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+            <AlertCircle className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-xl font-display font-semibold text-foreground">Connect ShareASale</h2>
           <p className="text-muted-foreground">You need to connect your ShareASale account to view transactions.</p>
-          <Button variant="accent" onClick={() => navigate("/onboarding")}>
+          <Button variant="hero" onClick={() => navigate("/onboarding")}>
             Connect Now
           </Button>
         </div>
@@ -132,79 +119,36 @@ export default function Transactions() {
   }
 
   return (
-    <div className="min-h-screen bg-background dark">
-      {/* Header */}
-      <header className="sticky top-0 z-50 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg gradient-bg flex items-center justify-center glow-sm">
-                <BarChart3 className="w-4 h-4 text-accent-foreground" />
-              </div>
-              <span className="font-bold text-lg text-foreground">AffHubPro</span>
-            </Link>
-            <nav className="hidden md:flex items-center gap-6">
-              <Link to="/dashboard" className="nav-link">Dashboard</Link>
-              <Link to="/transactions" className="nav-link nav-link-active">Transactions</Link>
-              <Link to="/settings" className="nav-link">Settings</Link>
-            </nav>
-          </div>
+    <div className="min-h-screen bg-background">
+      {/* Sidebar */}
+      <DashboardSidebar />
 
-          <div className="flex items-center gap-3">
+      {/* Main Content */}
+      <main className="ml-16 lg:ml-64 p-6 lg:p-8 transition-all duration-300">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">Transactions</h1>
+            <p className="text-muted-foreground mt-1">View and export all your affiliate transactions.</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass">
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              <span className="text-sm text-muted-foreground">Last sync: {lastSyncText}</span>
+            </div>
             <Button 
-              variant="glass" 
-              size="sm" 
+              variant="hero" 
               onClick={() => syncShareASale()}
               disabled={syncing}
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-              {syncing ? 'Syncing...' : 'Sync'}
+              {syncing ? 'Syncing...' : 'Sync Now'}
             </Button>
-            <Link to="/settings">
-              <Button variant="ghost" size="icon">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </Link>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="w-8 h-8 rounded-full gradient-bg flex items-center justify-center text-xs font-bold text-accent-foreground cursor-pointer">
-                  {userInitials}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/settings" className="w-full">
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Transactions</h1>
-            <p className="text-muted-foreground">View and export all your affiliate transactions.</p>
-          </div>
-          <Button variant="accent" size="sm" onClick={handleExportCSV} disabled={!transactions.length}>
-            <Download className="w-4 h-4" />
-            Export CSV
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Filters & Export */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -227,6 +171,10 @@ export default function Transactions() {
                 <SelectItem value="Voided">Voided</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="glass" onClick={handleExportCSV} disabled={!transactions.length}>
+              <Download className="w-4 h-4" />
+              Export CSV
+            </Button>
           </div>
         </div>
 

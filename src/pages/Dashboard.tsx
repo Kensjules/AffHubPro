@@ -58,12 +58,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background">
       {/* Sidebar */}
       <DashboardSidebar />
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8 transition-all duration-300">
+      {/* Main Content - offset by sidebar width */}
+      <main className="ml-16 lg:ml-64 p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
