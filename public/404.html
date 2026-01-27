@@ -1,26 +1,29 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
     <title>AffHubPro - Affiliate Analytics Dashboard</title>
-    <script>
-      // Single Page App redirect for GitHub Pages
-      // This script redirects all 404s to the index.html with the original path
-      const path = window.location.pathname;
-      const search = window.location.search;
-      const hash = window.location.hash;
-      
-      // Store the path in sessionStorage so index.html can pick it up
-      sessionStorage.setItem('redirectPath', path + search + hash);
-      
-      // Redirect to the root
-      window.location.replace('/');
-    </script>
+    <meta name="description" content="AffHubPro is the all-in-one affiliate analytics dashboard that helps you track, analyze, and optimize your affiliate marketing performance." />
+    <meta name="author" content="AffHubPro" />
+    <link rel="canonical" href="https://affhubpro.com/" />
+
+    <meta property="og:title" content="AffHubPro - Affiliate Analytics Dashboard" />
+    <meta property="og:description" content="Track, analyze, and optimize your affiliate marketing performance with AffHubPro." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://affhubpro.com/" />
+    <meta property="og:image" content="https://affhubpro.com/og-image.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@AffHubPro" />
+    <meta name="twitter:title" content="AffHubPro - Affiliate Analytics Dashboard" />
+    <meta name="twitter:description" content="Track, analyze, and optimize your affiliate marketing performance." />
+    <meta name="twitter:image" content="https://affhubpro.com/og-image.png" />
   </head>
+
   <body>
-    <noscript>
-      <meta http-equiv="refresh" content="0;url=/" />
-    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
