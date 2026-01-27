@@ -20,9 +20,12 @@ export function Footer() {
             <a href="mailto:support@affhubhq.io" className="nav-link">Support</a>
           </nav>
 
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} AffHubPro. All rights reserved.
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-sm text-muted-foreground">
+              © {new Date().getFullYear()} AffHubPro. All rights reserved.
+            </p>
+            <span className="text-xs text-muted-foreground/60 font-mono">v1.0</span>
+          </div>
         </div>
       </div>
     </footer>
