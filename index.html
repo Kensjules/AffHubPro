@@ -3,7 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <base href="/" />
     <title>AffHubPro - Affiliate Analytics Dashboard</title>
     <meta name="description" content="AffHubPro is the all-in-one affiliate analytics dashboard that helps you track, analyze, and optimize your affiliate marketing performance." />
     <meta name="author" content="AffHubPro" />
@@ -20,23 +19,10 @@
     <meta name="twitter:title" content="AffHubPro - Affiliate Analytics Dashboard" />
     <meta name="twitter:description" content="Track, analyze, and optimize your affiliate marketing performance." />
     <meta name="twitter:image" content="https://affhubpro.com/og-image.png" />
-    
-    <script>
-      // Handle SPA redirects from 404.html
-      (function() {
-        const redirectPath = sessionStorage.getItem('redirectPath');
-        if (redirectPath) {
-          sessionStorage.removeItem('redirectPath');
-          if (redirectPath !== '/' && redirectPath !== window.location.pathname) {
-            history.replaceState(null, '', redirectPath);
-          }
-        }
-      })();
-    </script>
   </head>
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>
