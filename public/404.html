@@ -19,19 +19,10 @@
     <meta name="twitter:title" content="AffHubPro - Affiliate Analytics Dashboard" />
     <meta name="twitter:description" content="Track, analyze, and optimize your affiliate marketing performance." />
     <meta name="twitter:image" content="https://affhubpro.com/og-image.png" />
-    <script>
-      // Redirect to hash-based route for GitHub Pages SPA
-      (function() {
-        var path = window.location.pathname;
-        if (path && path !== '/' && path !== '/index.html') {
-          window.location.replace('/#' + path);
-        } else {
-          window.location.replace('/#/');
-        }
-      })();
-    </script>
   </head>
+
   <body>
-    <p>Redirecting...</p>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
