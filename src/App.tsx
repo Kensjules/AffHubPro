@@ -16,6 +16,8 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
+// Build #22 cache-bust: 2026-01-29T00:00:00Z
+
 const queryClient = new QueryClient();
 
 const App = () => (
