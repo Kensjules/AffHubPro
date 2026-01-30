@@ -4,6 +4,7 @@ import {
   Receipt, 
   Store, 
   FileBarChart, 
+  Plug,
   Settings, 
   LogOut,
   ChevronLeft,
@@ -23,6 +24,7 @@ const navItems = [
   { label: "Transactions", icon: Receipt, path: "/transactions" },
   { label: "Stores", icon: Store, path: "/stores", disabled: true },
   { label: "Reports", icon: FileBarChart, path: "/reports", disabled: true },
+  { label: "Integrations", icon: Plug, path: "/integrations" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
