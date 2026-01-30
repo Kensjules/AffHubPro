@@ -155,6 +155,42 @@ export type Database = {
           },
         ]
       }
+      user_integrations: {
+        Row: {
+          api_token_encrypted: string | null
+          created_at: string | null
+          id: string
+          integration_type: string
+          is_connected: boolean | null
+          last_sync_at: string | null
+          publisher_id: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_token_encrypted?: string | null
+          created_at?: string | null
+          id?: string
+          integration_type: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          publisher_id?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_token_encrypted?: string | null
+          created_at?: string | null
+          id?: string
+          integration_type?: string
+          is_connected?: boolean | null
+          last_sync_at?: string | null
+          publisher_id?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       shareasale_accounts_public: {
