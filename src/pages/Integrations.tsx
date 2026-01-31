@@ -45,7 +45,7 @@ export default function Integrations() {
   const { integration, isLoading, isSaving, saveIntegration, syncNow } =
     useAwinIntegration();
 
-  // Force login guard: if there's no session, show a spinner for 1s then redirect to login.
+  // Force login guard: if there's no session, redirect to landing page.
   useEffect(() => {
     let timeoutId: number | undefined;
     let cancelled = false;
@@ -56,7 +56,7 @@ export default function Integrations() {
 
       if (!data.session) {
         timeoutId = window.setTimeout(() => {
-          navigate("/login", { replace: true });
+          navigate("/", { replace: true });
         }, 1000);
         return;
       }

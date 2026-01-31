@@ -32,7 +32,7 @@ export default function Dashboard() {
   const { data: shareASaleAccount } = useShareASaleAccount();
   const { mutate: syncShareASale, isPending: syncing } = useSyncShareASale();
 
-  // Force login guard: if there's no session, show a spinner for 1s then redirect to login.
+  // Force login guard: if there's no session, redirect to landing page.
   useEffect(() => {
     let timeoutId: number | undefined;
     let cancelled = false;
@@ -43,7 +43,7 @@ export default function Dashboard() {
 
       if (!data.session) {
         timeoutId = window.setTimeout(() => {
-          navigate("/login", { replace: true });
+          navigate("/", { replace: true });
         }, 1000);
         return;
       }
