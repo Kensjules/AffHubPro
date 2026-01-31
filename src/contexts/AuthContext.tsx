@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: "https://affhubpro.com/dashboard",
+        // Always use the current app origin for redirects (prevents falling back to external domains)
+        emailRedirectTo: `${window.location.origin}/dashboard`,
         data: {
           display_name: displayName,
         },
@@ -85,7 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: "https://affhubpro.com/reset-password",
+      // Always use the current app origin for redirects (prevents falling back to external domains)
+      redirectTo: `${window.location.origin}/reset-password`,
     });
 
     // Send custom password reset email
@@ -97,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: {
             type: "password_reset",
             to: email,
-            data: { resetLink: "https://affhubpro.com/reset-password" },
+            data: { resetLink: `${window.location.origin}/reset-password` },
           },
         });
       } catch (emailError) {

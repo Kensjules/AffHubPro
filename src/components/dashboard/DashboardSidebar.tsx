@@ -39,11 +39,8 @@ export function DashboardSidebar() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      // Clear local storage first
-      localStorage.clear();
-      
-      // Sign out from Supabase
-      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      // Sign out (no external redirects; root auth listener will handle post-signout routing)
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Logout error:", error);
@@ -51,13 +48,9 @@ export function DashboardSidebar() {
         setLoggingOut(false);
         return;
       }
-      
-      // Force redirect to the AffHubPro landing page (root of the app)
-      // Using navigate ensures we stay within the app
+
+      // Belt-and-suspenders: route to landing page inside the app
       navigate("/", { replace: true });
-      
-      // Force a page reload to clear all state
-      window.location.reload();
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Failed to sign out");
