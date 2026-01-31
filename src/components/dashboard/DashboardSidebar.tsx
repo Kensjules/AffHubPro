@@ -48,10 +48,16 @@ export function DashboardSidebar() {
       if (error) {
         console.error("Logout error:", error);
         toast.error("Failed to sign out");
+        setLoggingOut(false);
+        return;
       }
       
-      // Force redirect to landing page
-      window.location.href = "/";
+      // Force redirect to the AffHubPro landing page (root of the app)
+      // Using navigate ensures we stay within the app
+      navigate("/", { replace: true });
+      
+      // Force a page reload to clear all state
+      window.location.reload();
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Failed to sign out");
