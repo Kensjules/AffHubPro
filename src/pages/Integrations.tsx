@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +39,23 @@ const AwinLogo = () => (
 );
 
 export default function Integrations() {
+  const { user, loading: authLoading } = useAuth();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { integration, isLoading, isSaving, saveIntegration, syncNow } =
     useAwinIntegration();
+
+  // Double-check auth (ProtectedRoute should handle this, but belt-and-suspenders)
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   const isConnected = integration?.is_connected ?? false;
 
