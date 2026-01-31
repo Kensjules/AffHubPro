@@ -39,18 +39,10 @@ export function DashboardSidebar() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      // Sign out (no external redirects; root auth listener will handle post-signout routing)
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Logout error:", error);
-        toast.error("Failed to sign out");
-        setLoggingOut(false);
-        return;
-      }
-
-      // Belt-and-suspenders: route to landing page inside the app
-      navigate("/", { replace: true });
+      // Sign out globally - the onAuthStateChange listener in App.tsx will handle redirect to /
+      await supabase.auth.signOut({ scope: "global" });
+      // Explicit redirect to landing page as backup
+      window.location.replace("/");
     } catch (err) {
       console.error("Logout error:", err);
       toast.error("Failed to sign out");
