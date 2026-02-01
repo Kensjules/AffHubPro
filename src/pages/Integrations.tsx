@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +11,6 @@ import { Info, RefreshCw, CheckCircle2, Settings2, Loader2 } from "lucide-react"
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { useAwinIntegration } from "@/hooks/useAwinIntegration";
 import { format } from "date-fns";
-import { supabase } from "@/integrations/supabase/client";
 
 // Awin logo SVG component with official teal brand color
 const AwinLogo = () => (
@@ -39,46 +37,9 @@ const AwinLogo = () => (
 );
 
 export default function Integrations() {
-  const navigate = useNavigate();
-  const [authGateLoading, setAuthGateLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { integration, isLoading, isSaving, saveIntegration, syncNow } =
     useAwinIntegration();
-
-  // Force login guard: if there's no session, redirect to landing page.
-  useEffect(() => {
-    let timeoutId: number | undefined;
-    let cancelled = false;
-
-    const run = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-
-      if (!data.session) {
-        timeoutId = window.setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 1000);
-        return;
-      }
-
-      setAuthGateLoading(false);
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [navigate]);
-
-  if (authGateLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
 
   const isConnected = integration?.is_connected ?? false;
 
