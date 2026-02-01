@@ -8,7 +8,6 @@ import {
   AlertCircle
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useDashboardMetrics, useEarningsChart } from "@/hooks/useDashboardMetrics";
@@ -19,53 +18,16 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { RecentTransactionsTable } from "@/components/dashboard/RecentTransactionsTable";
-import { supabase } from "@/integrations/supabase/client";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [authGateLoading, setAuthGateLoading] = useState(true);
   const { data: profile, isLoading: profileLoading } = useProfile();
   const { data: metrics, isLoading: metricsLoading } = useDashboardMetrics();
   const { data: chartData, isLoading: chartLoading } = useEarningsChart();
   const { data: recentTransactions, isLoading: transactionsLoading } = useRecentTransactions(5);
   const { data: shareASaleAccount } = useShareASaleAccount();
   const { mutate: syncShareASale, isPending: syncing } = useSyncShareASale();
-
-  // Force login guard: if there's no session, redirect to landing page.
-  useEffect(() => {
-    let timeoutId: number | undefined;
-    let cancelled = false;
-
-    const run = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-
-      if (!data.session) {
-        timeoutId = window.setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 1000);
-        return;
-      }
-
-      setAuthGateLoading(false);
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-      if (timeoutId) window.clearTimeout(timeoutId);
-    };
-  }, [navigate]);
-
-  if (authGateLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <RefreshCw className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
 
   const handleSync = () => {
     syncShareASale();
