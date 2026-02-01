@@ -1,4 +1,4 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   Receipt, 
@@ -30,7 +30,6 @@ const navItems = [
 
 export function DashboardSidebar() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { data: profile } = useProfile();
   const [collapsed, setCollapsed] = useState(false);
@@ -39,9 +38,8 @@ export function DashboardSidebar() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      // Sign out globally - the onAuthStateChange listener in App.tsx will handle redirect to /
-      await supabase.auth.signOut({ scope: "global" });
-      // Explicit redirect to landing page as backup
+      // Only sign out + local redirect. Global redirect authority lives in App.tsx.
+      await supabase.auth.signOut();
       window.location.replace("/");
     } catch (err) {
       console.error("Logout error:", err);
