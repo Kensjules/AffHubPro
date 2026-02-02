@@ -1,27 +1,37 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { Header } from "./Header";
 
+// Mock useNavigate
+const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 describe("Header", () => {
-  it("renders settings gear icon with correct link to /settings", () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
+  it("renders settings gear icon button and navigates to /settings on click", () => {
     const { container } = render(
       <BrowserRouter>
         <Header />
       </BrowserRouter>
     );
     
-    // Find all links and check for the settings link
-    const links = container.querySelectorAll("a");
-    const linksArray = Array.from(links) as HTMLAnchorElement[];
-    const settingsLink = linksArray.find((link) => link.getAttribute("href") === "/settings");
+    // Find the settings button by aria-label
+    const settingsButton = container.querySelector('button[aria-label="Settings"]') as HTMLButtonElement;
     
-    // Verify the settings link exists and points to /settings
-    expect(settingsLink).toBeDefined();
-    expect(settingsLink).not.toBeUndefined();
-    if (settingsLink) {
-      expect(settingsLink.getAttribute("href")).toBe("/settings");
-    }
+    expect(settingsButton).not.toBeNull();
+    
+    settingsButton.click();
+    expect(mockNavigate).toHaveBeenCalledWith("/settings");
   });
 
   it("renders dashboard link", () => {
