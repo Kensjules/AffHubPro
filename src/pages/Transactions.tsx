@@ -101,22 +101,23 @@ export default function Transactions() {
     ? formatDistanceToNow(new Date(shareASaleAccount.last_sync_at), { addSuffix: true })
     : "Never";
 
-  if (!shareASaleAccount?.is_connected) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="glass rounded-xl p-8 max-w-md text-center space-y-4 animate-fade-in">
-          <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-            <AlertCircle className="w-8 h-8 text-primary" />
-          </div>
-          <h2 className="text-xl font-display font-semibold text-foreground">Connect ShareASale</h2>
-          <p className="text-muted-foreground">You need to connect your ShareASale account to view transactions.</p>
-          <Button variant="hero" onClick={() => navigate("/onboarding")}>
-            Connect Now
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // TEMP: Disable onboarding redirect for debugging - remove after testing complete
+  // if (!shareASaleAccount?.is_connected) {
+  //   return (
+  //     <div className="min-h-screen bg-background flex items-center justify-center">
+  //       <div className="glass rounded-xl p-8 max-w-md text-center space-y-4 animate-fade-in">
+  //         <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
+  //           <AlertCircle className="w-8 h-8 text-primary" />
+  //         </div>
+  //         <h2 className="text-xl font-display font-semibold text-foreground">Connect ShareASale</h2>
+  //         <p className="text-muted-foreground">You need to connect your ShareASale account to view transactions.</p>
+  //         <Button variant="hero" onClick={() => navigate("/onboarding")}>
+  //           Connect Now
+  //         </Button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-background">
