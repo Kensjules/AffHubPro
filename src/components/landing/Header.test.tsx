@@ -13,11 +13,15 @@ describe("Header", () => {
     
     // Find all links and check for the settings link
     const links = container.querySelectorAll("a");
-    const settingsLink = Array.from(links).find(link => link.getAttribute("href") === "/settings");
+    const linksArray = Array.from(links) as HTMLAnchorElement[];
+    const settingsLink = linksArray.find((link) => link.getAttribute("href") === "/settings");
     
     // Verify the settings link exists and points to /settings
     expect(settingsLink).toBeDefined();
-    expect(settingsLink?.getAttribute("href")).toBe("/settings");
+    expect(settingsLink).not.toBeUndefined();
+    if (settingsLink) {
+      expect(settingsLink.getAttribute("href")).toBe("/settings");
+    }
   });
 
   it("renders dashboard link", () => {
@@ -28,9 +32,13 @@ describe("Header", () => {
     );
     
     const links = container.querySelectorAll("a");
-    const dashboardLink = Array.from(links).find(link => link.textContent?.includes("Dashboard"));
+    const linksArray = Array.from(links) as HTMLAnchorElement[];
+    const dashboardLink = linksArray.find((link) => link.textContent?.includes("Dashboard"));
     
     expect(dashboardLink).toBeDefined();
-    expect(dashboardLink?.getAttribute("href")).toBe("/dashboard");
+    expect(dashboardLink).not.toBeUndefined();
+    if (dashboardLink) {
+      expect(dashboardLink.getAttribute("href")).toBe("/dashboard");
+    }
   });
 });
