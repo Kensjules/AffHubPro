@@ -1,208 +1,86 @@
 
-# Plan: Affiliate Integrations Section in Settings Page
+# Plan: Disable Mandatory ShareASale Connection Gates
 
-## Overview
+## Problem Identified
 
-Enhance the Settings page with a comprehensive "Integrations" tab that allows users to connect both **Awin** and **ShareASale** accounts directly from the Settings page, without needing to navigate to the separate Integrations page or Onboarding flow.
+The Dashboard and Transactions pages contain **component-level gates** that block access when ShareASale is not connected. These are NOT routing-level redirects, but rather conditional renders within the components themselves:
 
----
+| File | Gate Location | Behavior |
+|------|---------------|----------|
+| `Dashboard.tsx` | Lines 42-58 | Shows "Connect ShareASale" modal instead of dashboard |
+| `Transactions.tsx` | Lines 104-119 | Shows "Connect ShareASale" modal instead of transactions |
+| `Settings.tsx` | None | Already accessible without ShareASale |
 
-## Current State Analysis
+## Implementation
 
-### Existing Infrastructure
-- **Settings.tsx**: Has 3 tabs (Account, ShareASale, Security) with a basic ShareASale status display
-- **Integrations.tsx**: A separate page at `/integrations` with Awin connection
-- **Database Tables**:
-  - `shareasale_accounts`: Stores ShareASale credentials (merchant_id, api_token_encrypted, api_secret_encrypted)
-  - `user_integrations`: Stores Awin/other integrations (publisher_id, api_token_encrypted, api_secret_encrypted)
-- **Existing Hooks**: `useShareASale.ts` and `useAwinIntegration.ts` already handle API connections
-- **Edge Functions**: `validate-shareasale` and `store-shareasale-credentials` handle secure credential storage
+### Task 1: Bypass Dashboard Gate
 
-### Click-Blocking Issue
-The Header's gear icon works but the HeroSection's animated background effects may still cause issues on some browsers. Adding `pointer-events: none` to the HeroSection wrapper will permanently fix this.
+**File:** `src/pages/Dashboard.tsx`
 
----
-
-## Implementation Plan
-
-### Part 1: HeroSection Click-Blocking Fix
-
-**File:** `src/components/landing/HeroSection.tsx`
-
-Add `pointer-events: none` to the animated background container so clicks pass through to the Header:
+Comment out the ShareASale connection gate (lines 42-58) with a clear temporary marker:
 
 ```tsx
-{/* Background Effects - pointer-events: none to allow header clicks */}
-<div className="absolute inset-0 -z-10" style={{ pointerEvents: 'none' }}>
-  {/* ... existing background effects ... */}
-</div>
+// TEMP: Disable onboarding redirect for debugging - remove after testing complete
+// Gate: Require ShareASale connection
+// if (!shareASaleAccount?.is_connected) {
+//   return (
+//     <div className="min-h-screen bg-background flex items-center justify-center">
+//       ... connection prompt ...
+//     </div>
+//   );
+// }
 ```
 
----
+### Task 2: Bypass Transactions Gate
 
-### Part 2: Create ShareASale Connect Dialog Component
+**File:** `src/pages/Transactions.tsx`
 
-**New File:** `src/components/integrations/ShareASaleConnectDialog.tsx`
-
-Create a modal dialog (matching the existing AwinConnectDialog pattern) for connecting ShareASale:
-
-| Field | Type | Description |
-|-------|------|-------------|
-| Merchant/Affiliate ID | text | The user's ShareASale affiliate ID |
-| API Token | password | Masked API token input |
-| API Secret | password | Masked API secret input |
-
-Features:
-- Password-type inputs with show/hide toggle for security
-- Client-side Zod validation (min lengths, required fields)
-- Calls existing `useConnectShareASale` hook on submit
-- Loading states during validation/submission
-- External link to ShareASale API documentation
-
----
-
-### Part 3: Enhance Settings Page with Integrations Tab
-
-**File:** `src/pages/Settings.tsx`
-
-#### 3.1 Add "Integrations" Tab
-Rename/replace the existing "ShareASale" tab with a combined "Integrations" tab that shows both Awin and ShareASale:
+Comment out the ShareASale connection gate (lines 104-119) with the same temporary marker:
 
 ```tsx
-const tabs = [
-  { id: "account", label: "Account", icon: User },
-  { id: "integrations", label: "Integrations", icon: Link2 },  // Renamed
-  { id: "security", label: "Security", icon: Shield },
-];
+// TEMP: Disable onboarding redirect for debugging - remove after testing complete
+// if (!shareASaleAccount?.is_connected) {
+//   return (
+//     ... connection prompt ...
+//   );
+// }
 ```
 
-#### 3.2 Integrations Tab Content
+## Changes Summary
 
-Create two integration cards within the tab:
+| File | Change |
+|------|--------|
+| `src/pages/Dashboard.tsx` | Comment out lines 42-58 (ShareASale gate) |
+| `src/pages/Transactions.tsx` | Comment out lines 104-119 (ShareASale gate) |
 
-**ShareASale Card:**
-- Shows connection status (Connected/Not Connected badge)
-- When not connected: Shows "Connect" button that opens ShareASaleConnectDialog
-- When connected: Shows masked Merchant ID, last sync time, Sync Now button, Disconnect button
+## Technical Details
 
-**Awin Card:**
-- Shows connection status
-- When not connected: Shows "Connect" button that opens AwinConnectDialog
-- When connected: Shows Publisher ID, last sync time, Settings/Sync buttons
+### Why Component-Level Gates, Not Routes?
 
-Both cards follow the existing glass card design pattern with consistent styling.
+The original design intended to:
+1. Force users through onboarding before accessing the main app
+2. Provide a clear path to connect ShareASale
 
----
+With the new Integrations tab in Settings, users can now connect ShareASale from a more accessible location, making the forced gates unnecessary.
 
-### Part 4: Remove Temporary Emergency Button
+### Future Refactoring (Post-Testing)
 
-**File:** `src/App.tsx`
+Consider replacing the hard gates with a **soft notification banner**:
+- Show a dismissible banner at the top of Dashboard/Transactions when ShareASale is not connected
+- Link to Settings → Integrations tab to connect
+- Allow full page functionality without blocking access
 
-Remove the temporary red "GO TO SETTINGS" emergency button now that the underlying issue is resolved.
-
----
-
-## Component Structure
-
-```text
-Settings.tsx
-├── Tabs: Account | Integrations | Security
-│
-└── Integrations Tab
-    ├── ShareASale Card
-    │   ├── Logo + Status Badge
-    │   ├── Connection Info (when connected)
-    │   │   ├── Masked Merchant ID
-    │   │   ├── Last Sync Time
-    │   │   ├── Sync Now Button
-    │   │   └── Disconnect Button
-    │   └── Connect Button (when not connected)
-    │       └── Opens ShareASaleConnectDialog
-    │
-    └── Awin Card
-        ├── Logo + Status Badge
-        ├── Connection Info (when connected)
-        │   ├── Publisher ID
-        │   ├── Last Sync Time
-        │   ├── Settings Button
-        │   └── Sync Now Button
-        └── Connect Button (when not connected)
-            └── Opens AwinConnectDialog
-```
-
----
-
-## Technical Implementation Details
-
-### New Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/components/integrations/ShareASaleConnectDialog.tsx` | Modal dialog for ShareASale credential entry |
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/landing/HeroSection.tsx` | Add `pointer-events: none` to background effects container |
-| `src/pages/Settings.tsx` | Add Integrations tab with both Awin and ShareASale cards |
-| `src/App.tsx` | Remove emergency settings button |
-
-### Existing Resources to Reuse
-
-- `useShareASaleAccount()` - Check ShareASale connection status
-- `useConnectShareASale()` - Connect ShareASale with credentials
-- `useDisconnectShareASale()` - Disconnect ShareASale
-- `useSyncShareASale()` - Trigger data sync
-- `useAwinIntegration()` - All Awin operations
-- `AwinConnectDialog` - Existing dialog pattern to follow
-- Zod validation schema from Onboarding.tsx
-
----
-
-## Security Considerations
-
-1. **Password Inputs**: All credential fields use `type="password"` with optional show/hide toggles
-2. **Client-Side Only**: Credentials are only held in component state during form submission
-3. **Server-Side Storage**: Credentials are sent to edge functions which handle secure, encrypted storage
-4. **No Plain Text**: Credentials are never stored in client-side state after submission completes
-5. **Existing Security**: Leverages existing secure edge functions (`store-shareasale-credentials`)
-
----
-
-## UI/UX Design
-
-### Connection Status Badges
-- **Connected**: Green badge with checkmark icon
-- **Not Connected**: Gray/amber badge with warning icon
-
-### Card Layout
-Each integration card includes:
-- Network logo (ShareASale blue, Awin teal)
-- Status badge (top-right)
-- Description text
-- Action buttons (Connect, Sync, Disconnect)
-
-### Error Handling
-- Toast notifications for success/failure
-- Inline validation errors on form fields
-- Loading spinners during async operations
-
----
-
-## Testing Checklist
+## Verification Steps
 
 After implementation:
-1. Navigate to `/settings`
-2. Click "Integrations" tab
-3. Verify both ShareASale and Awin cards appear
-4. Test ShareASale connection flow:
-   - Click "Connect ShareASale"
-   - Enter credentials in dialog
-   - Verify validation works
-   - Submit and confirm success toast
-5. Test Awin connection flow similarly
-6. Verify Sync and Disconnect buttons work
-7. Test the Header gear icon still navigates to Settings
-8. Confirm no visual regressions
+1. Log in as an authenticated user WITHOUT ShareASale connected
+2. Navigate to `/dashboard` - verify full dashboard renders (may show empty data)
+3. Navigate to `/transactions` - verify transactions table renders (may show empty)
+4. Navigate to `/settings` → Integrations tab - verify connection cards appear
+5. Confirm the "Connect ShareASale" dialog in Settings works correctly
 
+## Cleanup Reminder
+
+These changes are marked as **TEMP** and should be:
+- Kept during the Awin/ShareASale integration testing phase
+- Either removed (restoring original behavior) or replaced with soft notifications after testing is complete
