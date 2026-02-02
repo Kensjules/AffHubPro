@@ -5,8 +5,8 @@ import { ArrowRight, Sparkles, Play } from "lucide-react";
 export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 -z-10">
+      {/* Background Effects - pointer-events: none to allow header clicks */}
+      <div className="absolute inset-0 -z-10" style={{ pointerEvents: 'none' }}>
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-[hsl(217,91%,60%)]/5 rounded-full blur-3xl" />
         {/* Grid pattern overlay */}
