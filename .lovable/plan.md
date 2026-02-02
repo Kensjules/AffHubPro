@@ -1,6 +1,8 @@
 
 # Plan: Fix Authentication Redirect Configuration
 
+## ✅ Status: APPROVED - Manual Configuration Required
+
 ## Problem Diagnosis
 
 The external ShareASale redirect on logout is **not caused by frontend code**. The codebase is already configured correctly:
@@ -11,38 +13,22 @@ The external ShareASale redirect on logout is **not caused by frontend code**. T
 
 **Root cause:** The Supabase Auth backend has cached redirect URLs from the old staging domain (`trans-a-lyze.lovable.app`). When auth events occur, the backend may be issuing redirect instructions that conflict with the frontend logic.
 
-## Solution
+## Solution - Manual Steps Required
 
-### Step 1: Update Supabase Auth Redirect URLs (Backend Configuration)
+### Step 1: Set Primary Domain in Lovable Project Settings
 
-Use the Lovable Cloud configure-auth tool to explicitly set the allowed redirect URLs:
+1. Go to **Project Settings** → **Domains**
+2. Find `affhubpro.com` in your domain list
+3. Click the **three-dot menu** next to it and select **"Set as Primary"**
+4. This forces all traffic from `trans-a-lyze.lovable.app` to redirect to `affhubpro.com`
 
-```
-Primary Site URL: https://affhubpro.com
+### Step 2: Clear Browser Cache and Test
 
-Additional Redirect URLs:
-- https://affhubpro.com
-- https://affhubpro.com/dashboard
-- https://affhubpro.com/reset-password
-```
-
-This ensures that **only** `affhubpro.com` URLs are recognized by the auth system.
-
-### Step 2: Verify Frontend Redirect Hardening
-
-The current implementation already uses `window.location.origin` dynamically. However, for maximum resilience against any backend redirect instructions, the sign-out flow should:
-
-1. Clear local Supabase state via `signOut()`
-2. Immediately hard-redirect to `/` using `window.location.replace("/")`
-
-This is already implemented correctly. No code changes needed here.
-
-### Step 3: Set Primary Domain in Project Settings
-
-For the production environment to strictly use `affhubpro.com`:
-1. Navigate to Project Settings in Lovable
-2. Under Domains, set `affhubpro.com` as the **Primary Domain**
-3. This ensures all other domains (including the old `trans-a-lyze.lovable.app` staging URL) redirect to the primary
+1. Clear your browser cache or open an **incognito window**
+2. Navigate to `https://affhubpro.com`
+3. Log in to the dashboard
+4. Click **Sign Out**
+5. Verify you land on `https://affhubpro.com/` with no external redirect
 
 ---
 
@@ -52,15 +38,11 @@ For the production environment to strictly use `affhubpro.com`:
 
 | File | Status |
 |------|--------|
-| `src/App.tsx` | Correct: `onAuthStateChange` listener handles `SIGNED_OUT` |
-| `src/components/dashboard/DashboardSidebar.tsx` | Correct: Uses `window.location.replace("/")` |
-| `src/contexts/AuthContext.tsx` | Correct: Uses `window.location.origin` for redirects |
-| `src/components/ProtectedRoute.tsx` | Correct: Redirects to `/` when no user |
-| `src/pages/Index.tsx` | Correct: Redirects authenticated users to `/dashboard` |
-
-### Backend Configuration Required
-
-The Supabase Auth Redirect URLs must be updated through the backend configuration interface. This is a settings change, not a code change.
+| `src/App.tsx` | ✅ Correct: `onAuthStateChange` listener handles `SIGNED_OUT` |
+| `src/components/dashboard/DashboardSidebar.tsx` | ✅ Correct: Uses `window.location.replace("/")` |
+| `src/contexts/AuthContext.tsx` | ✅ Correct: Uses `window.location.origin` for redirects |
+| `src/components/ProtectedRoute.tsx` | ✅ Correct: Redirects to `/` when no user |
+| `src/pages/Index.tsx` | ✅ Correct: Redirects authenticated users to `/dashboard` |
 
 ### Why Code Changes Won't Fix This
 
@@ -69,14 +51,12 @@ The redirect to an external URL happens because:
 2. During the sign-out process, the backend may issue a redirect instruction
 3. Even though the frontend immediately redirects to `/`, the browser may race with the backend instruction
 
-The only reliable fix is to update the backend configuration to use `affhubpro.com` as the sole allowed domain.
+The only reliable fix is to set `affhubpro.com` as the **Primary Domain** so all other domains redirect to it.
 
 ---
 
 ## Summary
 
-- **No frontend code changes required** - the implementation is correct
-- **Backend configuration change required** - update Supabase Auth redirect URLs
-- **Domain settings change required** - set `affhubpro.com` as Primary Domain
-
-After these configuration changes, clear your browser cache and test the logout flow in an incognito window to verify the fix.
+- ✅ **No frontend code changes required** - the implementation is correct
+- ⏳ **Domain settings change required** - set `affhubpro.com` as Primary Domain (manual step)
+- ⏳ **Test in incognito** - verify the fix after setting Primary Domain
