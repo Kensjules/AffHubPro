@@ -1,10 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Moon, Settings } from "lucide-react";
 
 export function Header() {
-  const navigate = useNavigate();
-  
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/30">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
@@ -33,7 +31,10 @@ export function Header() {
             variant="ghost" 
             size="icon" 
             className="text-muted-foreground cursor-pointer"
-            onClick={() => navigate("/settings")}
+            onClick={() => {
+              console.log("Redirecting to settings...");
+              window.location.href = "/settings";
+            }}
             aria-label="Settings"
           >
             <Settings className="w-4 h-4" />
