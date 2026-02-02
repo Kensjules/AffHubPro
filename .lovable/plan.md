@@ -1,78 +1,82 @@
 
-# Plan: Create New Integrations Page with Awin Card
+# Plan: Fix Authentication Redirect Configuration
 
-## Overview
-Create a dedicated Integrations page (`/integrations`) that displays affiliate network integrations. The page will feature an Awin/ShareASale integration card with a disabled "Sync Account" toggle and a "Coming Soon" tooltip to indicate the automated API is in development.
+## Problem Diagnosis
 
-## Implementation Details
+The external ShareASale redirect on logout is **not caused by frontend code**. The codebase is already configured correctly:
 
-### 1. Create the Integrations Page
-**File: `src/pages/Integrations.tsx`**
+- `App.tsx` has an `onAuthStateChange` listener that calls `window.location.replace("/")` on `SIGNED_OUT`
+- `DashboardSidebar.tsx` logout handler calls `supabase.auth.signOut()` then `window.location.replace("/")`
+- `AuthContext.tsx` uses `window.location.origin` for all email redirects
 
-The page will follow the existing dashboard layout pattern:
-- Use `DashboardSidebar` for consistent navigation
-- Include responsive padding (`ml-16 lg:ml-64`)
-- Apply the glass card styling consistent with Settings page
+**Root cause:** The Supabase Auth backend has cached redirect URLs from the old staging domain (`trans-a-lyze.lovable.app`). When auth events occur, the backend may be issuing redirect instructions that conflict with the frontend logic.
 
-**Page structure:**
-- Page header: "Integrations" title with subtitle
-- Integration cards section displaying available networks
-- Awin card with logo, description, toggle switch, and tooltip
+## Solution
 
-### 2. Add Awin/ShareASale Integration Card
+### Step 1: Update Supabase Auth Redirect URLs (Backend Configuration)
 
-The card will include:
-- **Awin Logo**: An inline SVG of the official Awin logo (teal/turquoise brand color)
-- **ShareASale mention**: Text indicating "Awin / ShareASale" since ShareASale is owned by Awin
-- **Description**: Brief text about what this integration will enable
-- **Toggle Switch**: Disabled switch labeled "Sync Account"
-- **Coming Soon Tooltip**: Hovering over the toggle shows "Coming Soon - We're building automated API sync"
+Use the Lovable Cloud configure-auth tool to explicitly set the allowed redirect URLs:
 
-### 3. Add Route to App.tsx
-Add a protected route for `/integrations` pointing to the new page.
-
-### 4. Add Navigation Link to Sidebar
-**File: `src/components/dashboard/DashboardSidebar.tsx`**
-
-Add "Integrations" item to the navigation with a `Plug` or `Link2` icon, positioned after "Reports" in the nav list.
-
-## Technical Approach
-
-### Components Used
-- `Switch` from `@/components/ui/switch` (already exists)
-- `Tooltip`, `TooltipTrigger`, `TooltipContent`, `TooltipProvider` from `@/components/ui/tooltip` (already exists)
-- `DashboardSidebar` for layout consistency
-- Lucide icons: `Plug` for nav item
-
-### Styling
-- Glass card effect (`.glass rounded-xl p-6`)
-- Consistent dark navy/gold theme
-- Disabled toggle with reduced opacity
-- Tooltip styled with the existing popover styles
-
-## Files to Create/Modify
-1. **Create**: `src/pages/Integrations.tsx` - New integrations page
-2. **Modify**: `src/App.tsx` - Add `/integrations` route
-3. **Modify**: `src/components/dashboard/DashboardSidebar.tsx` - Add nav item
-
-## Visual Preview
-
-```text
-+------------------------------------------+
-|  Integrations                            |
-|  Connect your affiliate networks         |
-+------------------------------------------+
-|                                          |
-|  +------------------------------------+  |
-|  |  [Awin Logo]                       |  |
-|  |  Awin / ShareASale                 |  |
-|  |  Sync your affiliate data          |  |
-|  |  automatically                     |  |
-|  |                                    |  |
-|  |  Sync Account  [ OFF ] (i)         |  |
-|  |                 ^                  |  |
-|  |          "Coming Soon" tooltip     |  |
-|  +------------------------------------+  |
-|                                          |
-+------------------------------------------+
 ```
+Primary Site URL: https://affhubpro.com
+
+Additional Redirect URLs:
+- https://affhubpro.com
+- https://affhubpro.com/dashboard
+- https://affhubpro.com/reset-password
+```
+
+This ensures that **only** `affhubpro.com` URLs are recognized by the auth system.
+
+### Step 2: Verify Frontend Redirect Hardening
+
+The current implementation already uses `window.location.origin` dynamically. However, for maximum resilience against any backend redirect instructions, the sign-out flow should:
+
+1. Clear local Supabase state via `signOut()`
+2. Immediately hard-redirect to `/` using `window.location.replace("/")`
+
+This is already implemented correctly. No code changes needed here.
+
+### Step 3: Set Primary Domain in Project Settings
+
+For the production environment to strictly use `affhubpro.com`:
+1. Navigate to Project Settings in Lovable
+2. Under Domains, set `affhubpro.com` as the **Primary Domain**
+3. This ensures all other domains (including the old `trans-a-lyze.lovable.app` staging URL) redirect to the primary
+
+---
+
+## Technical Details
+
+### Files Reviewed (No Changes Required)
+
+| File | Status |
+|------|--------|
+| `src/App.tsx` | Correct: `onAuthStateChange` listener handles `SIGNED_OUT` |
+| `src/components/dashboard/DashboardSidebar.tsx` | Correct: Uses `window.location.replace("/")` |
+| `src/contexts/AuthContext.tsx` | Correct: Uses `window.location.origin` for redirects |
+| `src/components/ProtectedRoute.tsx` | Correct: Redirects to `/` when no user |
+| `src/pages/Index.tsx` | Correct: Redirects authenticated users to `/dashboard` |
+
+### Backend Configuration Required
+
+The Supabase Auth Redirect URLs must be updated through the backend configuration interface. This is a settings change, not a code change.
+
+### Why Code Changes Won't Fix This
+
+The redirect to an external URL happens because:
+1. The Supabase Auth backend has a cached Site URL or redirect list
+2. During the sign-out process, the backend may issue a redirect instruction
+3. Even though the frontend immediately redirects to `/`, the browser may race with the backend instruction
+
+The only reliable fix is to update the backend configuration to use `affhubpro.com` as the sole allowed domain.
+
+---
+
+## Summary
+
+- **No frontend code changes required** - the implementation is correct
+- **Backend configuration change required** - update Supabase Auth redirect URLs
+- **Domain settings change required** - set `affhubpro.com` as Primary Domain
+
+After these configuration changes, clear your browser cache and test the logout flow in an incognito window to verify the fix.
