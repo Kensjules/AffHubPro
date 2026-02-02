@@ -1,213 +1,122 @@
 
 
-# Plan: Analytics Engine Foundation (Phase 2)
+# Plan: Fix Unresponsive Gear Icon in Header
 
-## Executive Summary
+## Root Cause Analysis
 
-This plan addresses four foundational components for the analytics engine: header navigation fix, database schema review, security hardening for API credentials, and automated testing.
+**Identified Issue:** The `Button` component applies `[&_svg]:pointer-events-none` to all child SVG elements (line 8 of `button.tsx`). This CSS rule disables click events on the Settings icon.
 
----
+**Why this matters for the gear icon:**
+- When using `asChild` with a Link, the Button renders the Link as its root element
+- The Settings SVG icon is inside the Link
+- The SVG covers most of the clickable area
+- `pointer-events: none` on the SVG means clicks on the icon dont register on the underlying Link
 
-## Current State Analysis
-
-### Header Navigation (Gear Icon)
-
-**Finding:** The landing page header (`src/components/landing/Header.tsx`) has a Settings gear icon that is **NOT linked** to any route:
-
+**Current structure (lines 30-34 of Header.tsx):**
 ```tsx
-// Line 30-32 - Currently just a button with no navigation
-<Button variant="ghost" size="icon" className="text-muted-foreground">
-  <Settings className="w-4 h-4" />
+<Button variant="ghost" size="icon" className="text-muted-foreground" asChild>
+  <Link to="/settings">
+    <Settings className="w-4 h-4" />  // <-- pointer-events: none applied here
+  </Link>
 </Button>
 ```
 
-**Dashboard sidebar already works:** The authenticated sidebar (`DashboardSidebar.tsx`) correctly links to `/settings` at line 28.
+---
 
-### Database Schema
+## Solution
 
-**Finding:** The `user_integrations` table **already exists** with the required structure:
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | UUID | Primary key, auto-generated |
-| `user_id` | UUID | Foreign key to `auth.users`, CASCADE delete |
-| `integration_type` | TEXT | Platform identifier (e.g., 'awin') |
-| `publisher_id` | TEXT | Platform-specific ID |
-| `api_token_encrypted` | TEXT | Token storage |
-| `is_connected` | BOOLEAN | Default false |
-| `last_sync_at` | TIMESTAMP | Last sync time |
-| `created_at` / `updated_at` | TIMESTAMP | Auto-managed |
-
-**Missing columns per request:** `platform_name`, `api_key`, `api_secret`
-
-### Security Architecture
-
-**Finding:** The project uses a secure edge function pattern (`store-shareasale-credentials`) that:
-- Uses the service role key for server-side storage
-- Validates user tokens before storing
-- Never exposes credentials to the client
-- Provides a public view (`shareasale_accounts_public`) that excludes sensitive columns
-
-**Current Gap:** The `api_token_encrypted` column stores plaintext (not actually encrypted). True encryption requires Supabase Vault integration.
-
-### Testing Infrastructure
-
-**Finding:** Vitest is properly configured with jsdom environment and React Testing Library. Example test exists at `src/test/example.test.ts`.
+Replace the `asChild` pattern with programmatic navigation using `useNavigate`. This approach:
+1. Uses a standard Button element (not a Link via `asChild`)
+2. Handles click events with an `onClick` handler
+3. Navigates programmatically to `/settings`
+4. Ensures the SVG icon is purely decorative while the button handles all interactions
 
 ---
 
-## Implementation Plan
+## Implementation
 
-### Task 1: Fix Header Gear Icon Navigation
+### Changes to `src/components/landing/Header.tsx`
 
-**Scope:** Wrap the Settings gear icon in a `Link` component pointing to `/settings`.
-
-**File:** `src/components/landing/Header.tsx`
-
-**Change:**
+**Add useNavigate import:**
 ```tsx
-// Before (lines 30-32)
-<Button variant="ghost" size="icon" className="text-muted-foreground">
-  <Settings className="w-4 h-4" />
-</Button>
+import { Link, useNavigate } from "react-router-dom";
+```
 
-// After
+**Add navigation hook in component:**
+```tsx
+export function Header() {
+  const navigate = useNavigate();
+  // ...
+}
+```
+
+**Replace the Settings button (lines 30-34):**
+```tsx
+// Before
 <Button variant="ghost" size="icon" className="text-muted-foreground" asChild>
   <Link to="/settings">
     <Settings className="w-4 h-4" />
   </Link>
 </Button>
-```
 
-**Effort:** Minimal (single line change)
-
----
-
-### Task 2: Database Schema Enhancement
-
-**Decision Required:** The existing `user_integrations` table uses `integration_type` instead of `platform_name`. Two options:
-
-**Option A (Recommended):** Use existing structure - `integration_type` serves the same purpose as `platform_name`. Add only missing columns.
-
-**Option B:** Rename `integration_type` to `platform_name` (breaking change).
-
-**Migration to add missing columns:**
-
-```sql
--- Add api_secret column for platforms requiring separate key/secret
-ALTER TABLE public.user_integrations 
-ADD COLUMN IF NOT EXISTS api_secret_encrypted TEXT;
-
--- Rename api_token_encrypted to api_key_encrypted for clarity (optional)
--- Note: This would require updating existing code
-```
-
-**RLS Policies:** Already implemented correctly - users can only access their own integrations.
-
----
-
-### Task 3: Credential Encryption with Edge Functions
-
-**Current Approach (Already Implemented):**
-The project uses server-side edge functions with the service role key. This is a valid security pattern that:
-- Keeps credentials server-side only
-- Uses RLS to prevent client-side access to sensitive columns
-- Provides a public view excluding credentials
-
-**Enhanced Security Option - Supabase Vault:**
-
-Supabase Vault provides transparent encryption at rest. However, it requires:
-1. Enabling the `pgsodium` extension
-2. Creating encryption keys
-3. Modifying storage to use encrypted columns
-
-**Recommended Approach:** Continue using the current edge function pattern as it already provides:
-- Credentials never sent to the client
-- Server-side storage via service role
-- RLS protection on base tables
-- Public view pattern for safe client queries
-
-If additional encryption is needed, I can add Vault integration as a follow-up task.
-
----
-
-### Task 4: Automated Navigation Test
-
-**New file:** `src/components/landing/Header.test.tsx`
-
-```tsx
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
-import { Header } from "./Header";
-
-describe("Header", () => {
-  it("renders settings gear icon with correct link to /settings", () => {
-    render(
-      <BrowserRouter>
-        <Header />
-      </BrowserRouter>
-    );
-    
-    // Find the settings link
-    const settingsLink = screen.getByRole("link", { name: /settings/i });
-    
-    // Verify it links to /settings
-    expect(settingsLink).toHaveAttribute("href", "/settings");
-  });
-});
+// After
+<Button 
+  variant="ghost" 
+  size="icon" 
+  className="text-muted-foreground cursor-pointer"
+  onClick={() => navigate("/settings")}
+  aria-label="Settings"
+>
+  <Settings className="w-4 h-4" />
+</Button>
 ```
 
 ---
 
-## Technical Architecture Summary
+## Why This Works
 
-```text
-+-------------------+     +----------------------+     +------------------+
-|   Landing Page    |     |   Dashboard Pages    |     |   Settings Page  |
-|   Header.tsx      |     |   DashboardSidebar   |     |   Settings.tsx   |
-|   (Gear Icon) ----+---->|   (Gear Icon) -------+---->|                  |
-+-------------------+     +----------------------+     +------------------+
-                                    |
-                                    v
-                          +------------------+
-                          |  user_integrations  |
-                          |  (Database Table)   |
-                          +------------------+
-                                    |
-                          +------------------+
-                          | Edge Function     |
-                          | (Service Role)    |
-                          | - Stores creds    |
-                          | - Server-side     |
-                          +------------------+
-```
+| Aspect | Before | After |
+|--------|--------|-------|
+| Element type | Link (via asChild) | Button |
+| Click handling | Browser link navigation | onClick handler |
+| SVG clickability | Blocked by `pointer-events-none` | Irrelevant - button handles clicks |
+| Cursor style | Default link behavior | Explicit `cursor-pointer` class |
+| Accessibility | Implicit link semantics | Explicit `aria-label` for screen readers |
 
 ---
 
-## Deliverables
+## Alternative Considered
 
-| # | Task | Status | Priority |
-|---|------|--------|----------|
-| 1 | Fix Header gear icon to link to `/settings` | Ready to implement | High |
-| 2 | Add `api_secret_encrypted` column to `user_integrations` | Ready to implement | Medium |
-| 3 | Verify edge function credential security (already secure) | Complete | High |
-| 4 | Create automated test for gear icon navigation | Ready to implement | Medium |
+Removing `[&_svg]:pointer-events-none` from the Button component globally would fix this issue but could cause unintended side effects:
+- SVG icons in buttons might intercept drag events unexpectedly
+- May affect icon button behavior in other parts of the app
+- The `pointer-events-none` pattern is intentional for most button use cases
+
+The targeted fix using `onClick` is safer and more explicit.
+
+---
+
+## Test Update
+
+The existing test in `Header.test.tsx` checks for an anchor element with `href="/settings"`. Since were switching to `onClick` navigation, the test should verify:
+1. A button with the Settings icon exists
+2. Clicking it triggers navigation (using a mocked `useNavigate`)
 
 ---
 
 ## Files to Modify
 
-1. `src/components/landing/Header.tsx` - Add Link wrapper to Settings button
-2. `src/components/landing/Header.test.tsx` - Create new test file
-3. Database migration (optional) - Add `api_secret_encrypted` column
+| File | Change |
+|------|--------|
+| `src/components/landing/Header.tsx` | Add `useNavigate`, replace Settings Link with Button + onClick |
+| `src/components/landing/Header.test.tsx` | Update test to verify button click behavior |
 
 ---
 
 ## Post-Implementation Verification
 
-1. Click gear icon in landing page header, confirm navigation to `/settings`
-2. Run automated test: `npm run test` or use the test tool
-3. Verify RLS policies prevent cross-user access
-4. Confirm edge functions continue to work for credential storage
+1. Navigate to the landing page (/)
+2. Hover over the gear icon - confirm cursor changes to pointer
+3. Click the gear icon - confirm navigation to /settings
+4. Run automated tests to verify behavior
 
