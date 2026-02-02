@@ -27,8 +27,10 @@ export function Header() {
             <Moon className="w-4 h-4" />
           </Button>
           <Link to="/dashboard" className="nav-link font-medium">Dashboard</Link>
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Settings className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="text-muted-foreground" asChild>
+            <Link to="/settings">
+              <Settings className="w-4 h-4" />
+            </Link>
           </Button>
           <Button variant="outline" size="sm" asChild>
             <Link to="/login" className="flex items-center gap-2">
