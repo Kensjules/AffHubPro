@@ -49,6 +49,27 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          {/* TEMPORARY: Emergency Settings Button - Remove after verification */}
+          <a
+            href="/settings"
+            style={{
+              position: 'fixed',
+              bottom: '20px',
+              right: '20px',
+              zIndex: 2147483647,
+              backgroundColor: '#CC0000',
+              color: 'white',
+              padding: '10px 15px',
+              borderRadius: '5px',
+              textDecoration: 'none',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+              fontSize: '14px',
+            }}
+          >
+            GO TO SETTINGS
+          </a>
           <BrowserRouter>
             <Routes>
               {/* Public routes */}
