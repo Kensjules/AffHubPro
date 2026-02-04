@@ -33,7 +33,7 @@ export default function Signup() {
 
   useEffect(() => {
     if (user) {
-      navigate("/onboarding");
+      navigate("/dashboard");
     }
   }, [user, navigate]);
 
@@ -70,8 +70,8 @@ export default function Signup() {
       },
     }).catch((err) => console.error("Failed to send welcome email:", err));
     
-    toast.success("Account created! Let's connect your ShareASale account.");
-    navigate("/onboarding");
+    toast.success("Account created! Welcome to AffHubPro.");
+    navigate("/dashboard");
     setLoading(false);
   };
 

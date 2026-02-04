@@ -4,7 +4,10 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   
   // Allowed origins for the application
   const allowedOrigins = [
-    // Production URLs
+    // Production custom domain
+    "https://affhubpro.com",
+    "https://www.affhubpro.com",
+    // Lovable preview URLs
     "https://id-preview--77fd7ca0-a1c1-4217-8651-093413cd8088.lovable.app",
     // Supabase URL
     Deno.env.get("SUPABASE_URL") || "",

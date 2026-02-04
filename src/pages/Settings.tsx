@@ -59,7 +59,7 @@ export default function Settings() {
     syncNow: syncAwin
   } = useAwinIntegration();
 
-  const [activeTab, setActiveTab] = useState<Tab>("account");
+  const [activeTab, setActiveTab] = useState<Tab>("datahub");
   
   // Dialog states
   const [showSASDialog, setShowSASDialog] = useState(false);
