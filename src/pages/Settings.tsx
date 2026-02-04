@@ -11,7 +11,8 @@ import {
   RefreshCw,
   Trash2,
   XCircle,
-  Plus
+  Plus,
+  Activity
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -22,6 +23,7 @@ import { formatDistanceToNow } from "date-fns";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ShareASaleConnectDialog } from "@/components/integrations/ShareASaleConnectDialog";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
+import { LiveRevenueFeed } from "@/components/dashboard/LiveRevenueFeed";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,7 +36,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-type Tab = "account" | "integrations" | "security";
+type Tab = "account" | "integrations" | "datahub" | "security";
 
 export default function Settings() {
   const { user, updatePassword } = useAuth();
@@ -82,6 +84,7 @@ export default function Settings() {
   const tabs = [
     { id: "account" as Tab, label: "Account", icon: User },
     { id: "integrations" as Tab, label: "Integrations", icon: Link2 },
+    { id: "datahub" as Tab, label: "Data Hub", icon: Activity },
     { id: "security" as Tab, label: "Security", icon: Shield },
   ];
 
@@ -404,6 +407,50 @@ export default function Settings() {
                       Connect Awin
                     </Button>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Data Hub Tab */}
+            {activeTab === "datahub" && (
+              <div className="space-y-6">
+                <LiveRevenueFeed />
+                
+                {/* Quick Actions */}
+                <div className="glass rounded-xl p-6 space-y-4">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground mb-1">Quick Sync</h2>
+                    <p className="text-sm text-muted-foreground">Manually trigger data sync for connected networks</p>
+                  </div>
+                  <div className="flex gap-3">
+                    {shareASaleAccount?.is_connected && (
+                      <Button 
+                        variant="glass" 
+                        size="sm" 
+                        onClick={() => syncShareASale()} 
+                        disabled={syncingSAS}
+                      >
+                        <RefreshCw className={`w-4 h-4 ${syncingSAS ? 'animate-spin' : ''}`} />
+                        {syncingSAS ? 'Syncing...' : 'Sync ShareASale'}
+                      </Button>
+                    )}
+                    {awinIntegration?.is_connected && (
+                      <Button 
+                        variant="glass" 
+                        size="sm" 
+                        onClick={syncAwin} 
+                        disabled={awinSaving}
+                      >
+                        <RefreshCw className={`w-4 h-4 ${awinSaving ? 'animate-spin' : ''}`} />
+                        {awinSaving ? 'Syncing...' : 'Sync Awin'}
+                      </Button>
+                    )}
+                    {!shareASaleAccount?.is_connected && !awinIntegration?.is_connected && (
+                      <p className="text-sm text-muted-foreground">
+                        Connect a network in the Integrations tab to enable sync
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
