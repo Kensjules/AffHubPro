@@ -18,6 +18,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { RecentTransactionsTable } from "@/components/dashboard/RecentTransactionsTable";
+import { BrokenLinkScanner } from "@/components/dashboard/BrokenLinkScanner";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -145,6 +146,11 @@ export default function Dashboard() {
         {/* Revenue Chart */}
         <div className="mb-8">
           <RevenueChart data={chartData} isLoading={chartLoading} />
+        </div>
+
+        {/* Link Health Monitor */}
+        <div className="mb-8">
+          <BrokenLinkScanner />
         </div>
 
         {/* Recent Transactions */}

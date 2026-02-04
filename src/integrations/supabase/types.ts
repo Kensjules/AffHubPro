@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_links: {
+        Row: {
+          created_at: string
+          http_status_code: number | null
+          id: string
+          last_checked_at: string | null
+          merchant_name: string | null
+          network: string
+          recovery_suggestion: string | null
+          status: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          http_status_code?: number | null
+          id?: string
+          last_checked_at?: string | null
+          merchant_name?: string | null
+          network: string
+          recovery_suggestion?: string | null
+          status?: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          http_status_code?: number | null
+          id?: string
+          last_checked_at?: string | null
+          merchant_name?: string | null
+          network?: string
+          recovery_suggestion?: string | null
+          status?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
