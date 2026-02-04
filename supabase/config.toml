@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.scan-affiliate-links]
 verify_jwt = false
+
+[functions.store-awin-credentials]
+verify_jwt = false

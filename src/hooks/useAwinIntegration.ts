@@ -11,7 +11,7 @@ export interface AwinIntegration {
 }
 
 export function useAwinIntegration() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [integration, setIntegration] = useState<AwinIntegration | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -45,7 +45,7 @@ export function useAwinIntegration() {
   };
 
   const saveIntegration = async (publisherId: string, apiToken: string) => {
-    if (!user) {
+    if (!user || !session?.access_token) {
       toast.error("You must be logged in to save integrations");
       return false;
     }
@@ -53,30 +53,17 @@ export function useAwinIntegration() {
     setIsSaving(true);
 
     try {
-      if (integration) {
-        // Update existing integration
-        const { error } = await supabase
-          .from("user_integrations")
-          .update({
-            publisher_id: publisherId,
-            api_token_encrypted: apiToken, // In production, encrypt this server-side
-            is_connected: true,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", integration.id);
+      // Call edge function to store credentials server-side
+      const { data, error } = await supabase.functions.invoke(
+        "store-awin-credentials",
+        {
+          body: { publisherId, apiToken },
+        }
+      );
 
-        if (error) throw error;
-      } else {
-        // Insert new integration
-        const { error } = await supabase.from("user_integrations").insert({
-          user_id: user.id,
-          integration_type: "awin",
-          publisher_id: publisherId,
-          api_token_encrypted: apiToken, // In production, encrypt this server-side
-          is_connected: true,
-        });
-
-        if (error) throw error;
+      if (error) throw error;
+      if (!data?.success) {
+        throw new Error(data?.message || "Failed to store credentials");
       }
 
       await fetchIntegration();
