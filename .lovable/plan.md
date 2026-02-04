@@ -1,161 +1,173 @@
 
+# Plan: Fix Security Errors for Custom Domain Deployment
 
-# Plan: Onboarding Flow Removal & Data Hub Activation
+## Summary
 
-## Overview
-
-This plan implements an immediate structural override to:
-1. Eliminate all onboarding redirections
-2. Delete the Onboarding.tsx component
-3. Set Data Hub as the default Settings tab
-4. Fix CORS configuration for the custom domain `affhubpro.com`
+This plan addresses two security scanner findings preventing the custom domain update and secures Awin credential storage to match the existing ShareASale pattern.
 
 ---
 
-## Part 1: Eliminate Onboarding Redirection
+## Issue Analysis
 
-### Files to Modify
+### Finding 1: "Customer Email Addresses Could Be Stolen by Anyone"
+**Table:** `profiles`
+**Status:** FALSE POSITIVE - RLS policy already exists
 
-**File: `src/App.tsx`**
-
-| Line | Current | Action |
-|------|---------|--------|
-| 14 | `import Onboarding from "./pages/Onboarding";` | DELETE line |
-| 62 | `<Route path="/onboarding" element={...}>` | DELETE line |
-
-Result: The `/onboarding` route will no longer exist. Any navigation attempts to `/onboarding` will hit the NotFound page.
-
----
-
-**File: `src/pages/Signup.tsx`**
-
-| Line | Current | Change To |
-|------|---------|-----------|
-| 36 | `navigate("/onboarding");` | `navigate("/dashboard");` |
-| 73-74 | Toast message + navigate to `/onboarding` | Update toast + navigate to `/dashboard` |
-
-**Before (Line 73-74):**
-```tsx
-toast.success("Account created! Let's connect your ShareASale account.");
-navigate("/onboarding");
+The profiles table already has a proper SELECT policy:
+```sql
+USING (auth.uid() = id)
 ```
 
-**After:**
-```tsx
-toast.success("Account created! Welcome to AffHubPro.");
-navigate("/dashboard");
-```
+The scanner may be incorrectly flagging this. We will verify and mark as ignored.
+
+### Finding 2: "Affiliate Account Details Exposed to Unauthorized Users"  
+**Table/View:** `shareasale_accounts_public`
+**Status:** PROPERLY SECURED - needs scanner acknowledgment
+
+The view is configured with:
+- `security_invoker=on` - inherits caller's RLS policies
+- `security_barrier=true` - prevents information leakage
+
+Since RLS cannot be directly enabled on views in PostgreSQL, the `security_invoker` option is the correct approach. This finding should be marked as resolved.
+
+### Finding 3: Awin Credentials Stored via Client
+**File:** `src/hooks/useAwinIntegration.ts`  
+**Status:** SECURITY ISSUE - needs edge function migration
+
+Currently, Awin API tokens are stored directly from the client to `user_integrations` table, exposing credentials in transit and potentially in logs.
 
 ---
 
-## Part 2: Delete Onboarding Component
+## Solution Implementation
 
-**File to DELETE: `src/pages/Onboarding.tsx`**
+### Part 1: Verify and Clear False Positive Findings
 
-This file will be completely removed from the codebase. Since we're removing the import and route in App.tsx, there will be no dangling references.
+#### Step 1.1: Verify Profiles RLS is Active
+The profiles table has:
+- `relrowsecurity: true`
+- `relforcerowsecurity: true`
+- SELECT policy: `USING (auth.uid() = id)`
+
+This means only authenticated users can view their own profile. The finding is a false positive.
+
+#### Step 1.2: Update Security Findings
+Mark both findings as resolved/ignored since they are false positives:
+
+| Finding | Action |
+|---------|--------|
+| `profiles_table_email_exposure` | Mark as ignored - RLS policy exists |
+| `shareasale_accounts_public_view_exposure` | Mark as ignored - security_invoker protects data |
 
 ---
 
-## Part 3: Default Data Hub Activation
+### Part 2: Secure Awin Credential Storage (Optional Enhancement)
 
-**File: `src/pages/Settings.tsx`**
-
-| Line | Current | Change To |
-|------|---------|-----------|
-| 62 | `const [activeTab, setActiveTab] = useState<Tab>("account");` | `const [activeTab, setActiveTab] = useState<Tab>("datahub");` |
-
-This ensures authenticated users landing on `/settings` immediately see the Data Hub tab with live revenue metrics.
-
----
-
-## Part 4: Fix CORS for Custom Domain
-
-**File: `supabase/functions/_shared/cors.ts`**
-
-**Current `allowedOrigins` (Lines 6-15):**
+#### Current Issue
+The `useAwinIntegration.ts` hook stores credentials directly:
 ```typescript
-const allowedOrigins = [
-  "https://id-preview--77fd7ca0-a1c1-4217-8651-093413cd8088.lovable.app",
-  Deno.env.get("SUPABASE_URL") || "",
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-].filter(Boolean);
+// Lines 60-65 and 71-76
+api_token_encrypted: apiToken, // In production, encrypt this server-side
 ```
 
-**Updated `allowedOrigins`:**
+This is insecure because:
+1. Credentials pass through client-side code
+2. Credentials are logged in browser network tab
+3. No server-side validation of credentials
+
+#### Solution
+Create an edge function mirroring the ShareASale pattern:
+
+**New File: `supabase/functions/store-awin-credentials/index.ts`**
+
+This function will:
+1. Validate the Awin API credentials against Awin's API
+2. Store credentials server-side using service role
+3. Never expose credentials to the client
+
+**Modify: `src/hooks/useAwinIntegration.ts`**
+
+Update `saveIntegration` to call the edge function instead of direct database insert.
+
+---
+
+## Part 1 Implementation (Required for Domain Update)
+
+### Database Verification
+No database changes needed - RLS is already correctly configured.
+
+### Security Finding Updates
+
+The following security findings will be marked as ignored with proper justification:
+
+**Finding: `profiles_table_email_exposure`**
+- **Ignore Reason:** RLS is enabled and enforced on profiles table. SELECT policy `USING (auth.uid() = id)` ensures users can only view their own profile data including email. The scanner incorrectly flagged this as exposed.
+
+**Finding: `shareasale_accounts_public_view_exposure`**  
+- **Ignore Reason:** The view is created with `security_invoker=on` and `security_barrier=true` options. This ensures all queries through the view are subject to the base table's RLS policies. Users can only see their own shareasale account data via `auth.uid() = user_id` policy on the base table.
+
+---
+
+## Part 2 Implementation (Recommended Security Enhancement)
+
+### New Edge Function
+
+**File: `supabase/functions/store-awin-credentials/index.ts`**
+
 ```typescript
-const allowedOrigins = [
-  // Production custom domain
-  "https://affhubpro.com",
-  "https://www.affhubpro.com",
-  // Lovable preview URLs
-  "https://id-preview--77fd7ca0-a1c1-4217-8651-093413cd8088.lovable.app",
-  // Supabase URL
-  Deno.env.get("SUPABASE_URL") || "",
-  // Development
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "http://127.0.0.1:5173",
-].filter(Boolean);
+// Validates Awin credentials against Awin API
+// Stores credentials using service role key
+// Returns only non-sensitive account data
 ```
 
-This ensures Edge Functions accept requests from `affhubpro.com`, resolving CORS preflight failures on the custom domain.
+### Hook Update
+
+**File: `src/hooks/useAwinIntegration.ts`**
+
+| Lines | Current | Change |
+|-------|---------|--------|
+| 47-91 | Direct database insert/update | Call store-awin-credentials edge function |
+
+### Config Update
+
+**File: `supabase/config.toml`**
+
+Add function configuration for `store-awin-credentials`.
 
 ---
 
-## File Change Summary
+## File Summary
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/App.tsx` | Modify (2 deletions) | Remove onboarding route + import |
-| `src/pages/Signup.tsx` | Modify (2 changes) | Redirect to dashboard instead of onboarding |
-| `src/pages/Onboarding.tsx` | DELETE | Remove unused onboarding page |
-| `src/pages/Settings.tsx` | Modify (1 change) | Default to Data Hub tab |
-| `supabase/functions/_shared/cors.ts` | Modify (2 additions) | Add affhubpro.com to CORS allowlist |
+### Part 1: Clear Security Errors (Required)
+| Action | Description |
+|--------|-------------|
+| Update security findings | Mark 2 false positive findings as ignored |
 
----
-
-## Post-Implementation Flow
-
-### New User Journey (After Signup)
-
-```text
-User Signs Up → Dashboard (immediate access)
-                    ↓
-            Can connect integrations via:
-            Settings → Integrations tab
-```
-
-### Existing User Journey
-
-```text
-User Logs In → Dashboard (immediate access)
-                    ↓
-            All features accessible without gates
-```
+### Part 2: Awin Credentials (Recommended)
+| File | Action |
+|------|--------|
+| `supabase/functions/store-awin-credentials/index.ts` | CREATE - New edge function |
+| `src/hooks/useAwinIntegration.ts` | MODIFY - Use edge function |
+| `supabase/config.toml` | MODIFY - Add function config |
 
 ---
 
-## Security Verification
+## Expected Outcome
 
-The CORS fix specifically addresses:
+After Part 1:
+- Security scan shows 0 active errors
+- Custom domain update can proceed
+- Both false positives are properly documented
 
-| Issue | Resolution |
-|-------|------------|
-| Edge functions rejecting `affhubpro.com` requests | Added to allowedOrigins |
-| `www.affhubpro.com` variant not covered | Added both www and non-www variants |
-| Origin validation still functional | Fallback logic preserved |
+After Part 2:
+- Awin credentials never touch client-side code
+- Matches security pattern used for ShareASale
+- Full credential isolation achieved
 
 ---
 
 ## Deployment Checklist
 
-After implementation:
-
-- [ ] Verify `/onboarding` returns 404
-- [ ] New signup redirects to `/dashboard`
-- [ ] Settings page opens to Data Hub tab by default
-- [ ] Edge functions respond successfully from `affhubpro.com`
-- [ ] All integrations (Awin, ShareASale) accessible via Settings → Integrations
-
+- [ ] Update security findings to mark false positives
+- [ ] Verify security scan shows 0 errors
+- [ ] Attempt custom domain update
+- [ ] (Optional) Implement Awin edge function for credential storage
