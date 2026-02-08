@@ -1,173 +1,169 @@
 
-# Plan: Fix Security Errors for Custom Domain Deployment
+# Plan: Integrate Resend for Automated Broken Link Alerts
 
-## Summary
+## Executive Decisions Confirmed
+- **Throttle Window**: 24 hours (one reminder per day maximum)
+- **Alert Scope**: Only alert for links transitioning from `active` → `error`
+- **Recovery Notifications**: YES - send "Link Recovered" email when status changes from `error` → `active`
 
-This plan addresses two security scanner findings preventing the custom domain update and secures Awin credential storage to match the existing ShareASale pattern.
+## Architecture Overview
 
----
+### How Status Change Detection Works
+The `scan-link` edge function will fetch the link's current status before updating. Only if the status **changes** will we trigger email alerts:
 
-## Issue Analysis
+```
+Previous Status  →  New Status  →  Action
+─────────────────────────────────────────
+   active       →    error     →  Send "Link Broken" alert
+   error        →    active    →  Send "Link Recovered" notification
+   paused       →    error     →  NO EMAIL (user paused intentionally)
+   active       →    active    →  NO EMAIL (no status change)
+```
 
-### Finding 1: "Customer Email Addresses Could Be Stolen by Anyone"
-**Table:** `profiles`
-**Status:** FALSE POSITIVE - RLS policy already exists
-
-The profiles table already has a proper SELECT policy:
+### Database Schema Update
+Add tracking columns to `affiliate_links` table:
 ```sql
-USING (auth.uid() = id)
+ALTER TABLE affiliate_links 
+  ADD COLUMN IF NOT EXISTS last_alert_sent_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS previous_status TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_affiliate_links_last_alert 
+  ON affiliate_links(last_alert_sent_at);
 ```
 
-The scanner may be incorrectly flagging this. We will verify and mark as ignored.
+### Smart Throttling Logic
+The edge function will check:
+1. **Status Changed?** Only if `previous_status != new_status`
+2. **Active → Error?** Only alert if transitioning from `active` to `error`
+3. **24-Hour Cooldown?** Only if `last_alert_sent_at` is NULL or `> 24 hours ago`
+4. **Fetch User Email**: Query profiles table for user's email via `user_id`
 
-### Finding 2: "Affiliate Account Details Exposed to Unauthorized Users"  
-**Table/View:** `shareasale_accounts_public`
-**Status:** PROPERLY SECURED - needs scanner acknowledgment
-
-The view is configured with:
-- `security_invoker=on` - inherits caller's RLS policies
-- `security_barrier=true` - prevents information leakage
-
-Since RLS cannot be directly enabled on views in PostgreSQL, the `security_invoker` option is the correct approach. This finding should be marked as resolved.
-
-### Finding 3: Awin Credentials Stored via Client
-**File:** `src/hooks/useAwinIntegration.ts`  
-**Status:** SECURITY ISSUE - needs edge function migration
-
-Currently, Awin API tokens are stored directly from the client to `user_integrations` table, exposing credentials in transit and potentially in logs.
-
----
-
-## Solution Implementation
-
-### Part 1: Verify and Clear False Positive Findings
-
-#### Step 1.1: Verify Profiles RLS is Active
-The profiles table has:
-- `relrowsecurity: true`
-- `relforcerowsecurity: true`
-- SELECT policy: `USING (auth.uid() = id)`
-
-This means only authenticated users can view their own profile. The finding is a false positive.
-
-#### Step 1.2: Update Security Findings
-Mark both findings as resolved/ignored since they are false positives:
-
-| Finding | Action |
-|---------|--------|
-| `profiles_table_email_exposure` | Mark as ignored - RLS policy exists |
-| `shareasale_accounts_public_view_exposure` | Mark as ignored - security_invoker protects data |
-
----
-
-### Part 2: Secure Awin Credential Storage (Optional Enhancement)
-
-#### Current Issue
-The `useAwinIntegration.ts` hook stores credentials directly:
+Example throttling check:
 ```typescript
-// Lines 60-65 and 71-76
-api_token_encrypted: apiToken, // In production, encrypt this server-side
+const shouldAlert = 
+  link.status === 'active' && // Was previously active
+  newStatus === 'error' &&    // Now broken
+  (!link.last_alert_sent_at || 
+   Date.now() - new Date(link.last_alert_sent_at).getTime() > 86400000)
 ```
 
-This is insecure because:
-1. Credentials pass through client-side code
-2. Credentials are logged in browser network tab
-3. No server-side validation of credentials
+## File Changes
 
-#### Solution
-Create an edge function mirroring the ShareASale pattern:
+### 1. Database Migration
+**File**: `supabase/migrations/[timestamp].sql`
 
-**New File: `supabase/functions/store-awin-credentials/index.ts`**
+Purpose: Add `last_alert_sent_at` and `previous_status` columns for tracking.
 
-This function will:
-1. Validate the Awin API credentials against Awin's API
-2. Store credentials server-side using service role
-3. Never expose credentials to the client
+### 2. Edge Function Enhancement
+**File**: `supabase/functions/scan-link/index.ts`
 
-**Modify: `src/hooks/useAwinIntegration.ts`**
+Changes:
+- Fetch current link record before update (to detect status changes)
+- Fetch user's email from profiles table
+- Call send-email edge function when status changes
+- Update `last_alert_sent_at` only when alert is sent
+- Return additional metadata for debugging
 
-Update `saveIntegration` to call the edge function instead of direct database insert.
-
----
-
-## Part 1 Implementation (Required for Domain Update)
-
-### Database Verification
-No database changes needed - RLS is already correctly configured.
-
-### Security Finding Updates
-
-The following security findings will be marked as ignored with proper justification:
-
-**Finding: `profiles_table_email_exposure`**
-- **Ignore Reason:** RLS is enabled and enforced on profiles table. SELECT policy `USING (auth.uid() = id)` ensures users can only view their own profile data including email. The scanner incorrectly flagged this as exposed.
-
-**Finding: `shareasale_accounts_public_view_exposure`**  
-- **Ignore Reason:** The view is created with `security_invoker=on` and `security_barrier=true` options. This ensures all queries through the view are subject to the base table's RLS policies. Users can only see their own shareasale account data via `auth.uid() = user_id` policy on the base table.
-
----
-
-## Part 2 Implementation (Recommended Security Enhancement)
-
-### New Edge Function
-
-**File: `supabase/functions/store-awin-credentials/index.ts`**
-
+Key logic additions:
 ```typescript
-// Validates Awin credentials against Awin API
-// Stores credentials using service role key
-// Returns only non-sensitive account data
+// Fetch current link to detect status change
+const { data: currentLink } = await supabase
+  .from("affiliate_links")
+  .select("status, last_alert_sent_at")
+  .eq("id", linkId)
+  .single();
+
+// Check if we should send alert
+const wasActive = currentLink.status === "active";
+const isNowError = newStatus === "error";
+const isRecovery = currentLink.status === "error" && newStatus === "active";
+const canSendAlert = !currentLink.last_alert_sent_at || 
+  (Date.now() - new Date(currentLink.last_alert_sent_at).getTime() > 86400000);
+
+if ((wasActive && isNowError && canSendAlert) || (isRecovery && canSendAlert)) {
+  // Fetch user email and send alert
+}
 ```
 
-### Hook Update
+### 3. Email Templates Update
+**File**: `supabase/functions/send-email/index.ts`
 
-**File: `src/hooks/useAwinIntegration.ts`**
+Add two new email types to the `emailTemplates` object:
 
-| Lines | Current | Change |
-|-------|---------|--------|
-| 47-91 | Direct database insert/update | Call store-awin-credentials edge function |
+**Template 1: `link_broken`**
+- **Subject**: `⚠️ Your Affiliate Link is Broken – ${merchantName}`
+- **Tone**: Urgent but professional
+- **Content**: 
+  - Highlight which merchant link is broken
+  - Show HTTP status code
+  - Suggest next steps (click to view link, manual inspection)
+  - CTA: "Check Link Status" → `/settings` 
 
-### Config Update
+**Template 2: `link_recovered`**
+- **Subject**: `✅ Good News – Your Affiliate Link is Back Online`
+- **Tone**: Positive, reassuring
+- **Content**:
+  - Confirm which link is now working again
+  - Show it's been restored to active
+  - Thank user for their attention to detail
+  - CTA: "View Link Vault" → `/settings`
 
-**File: `supabase/config.toml`**
+Both templates match existing AffHubPro dark theme:
+- Background: Dark navy gradient (#0a0a0a → #0f172a)
+- Accent color: Gold (#d4af37) for primary elements
+- Alert indicators: Red (#f87171) for broken, Green (#22c55e) for recovered
 
-Add function configuration for `store-awin-credentials`.
+### 4. Resend Integration Points
 
----
+The `send-email` function currently supports:
+- `welcome` (new user)
+- `password_reset` (auth)
+- `sync_failed` (ShareASale)
 
-## File Summary
+Will add:
+- `link_broken` (new alert type)
+- `link_recovered` (new alert type)
 
-### Part 1: Clear Security Errors (Required)
-| Action | Description |
-|--------|-------------|
-| Update security findings | Mark 2 false positive findings as ignored |
+Email interface will extend:
+```typescript
+interface EmailRequest {
+  type: "welcome" | "password_reset" | "sync_failed" | "link_broken" | "link_recovered";
+  to: string;
+  data?: {
+    name?: string;
+    resetLink?: string;
+    merchantName?: string;
+    httpCode?: number;
+    url?: string;
+  };
+}
+```
 
-### Part 2: Awin Credentials (Recommended)
-| File | Action |
-|------|--------|
-| `supabase/functions/store-awin-credentials/index.ts` | CREATE - New edge function |
-| `src/hooks/useAwinIntegration.ts` | MODIFY - Use edge function |
-| `supabase/config.toml` | MODIFY - Add function config |
+## Implementation Sequence
 
----
+1. **Run database migration** to add tracking columns
+2. **Update send-email function** with new template types
+3. **Update scan-link function** to:
+   - Fetch link's previous status
+   - Detect status changes
+   - Call send-email when alert conditions are met
+   - Update `last_alert_sent_at` timestamp
 
-## Expected Outcome
+## Success Criteria
 
-After Part 1:
-- Security scan shows 0 active errors
-- Custom domain update can proceed
-- Both false positives are properly documented
+✅ User receives "Link Broken" email only when link transitions from active → error (not on manual pause)
+✅ User receives "Link Recovered" email when link transitions from error → active
+✅ Maximum one alert per link per 24 hours (smart throttling prevents spam)
+✅ Email contains merchant name, HTTP status, and actionable CTA
+✅ Email templates match AffHubPro dark theme aesthetic
+✅ No console errors; graceful fallback if email fails (still update database status)
 
-After Part 2:
-- Awin credentials never touch client-side code
-- Matches security pattern used for ShareASale
-- Full credential isolation achieved
+## Error Handling
 
----
+If Resend call fails:
+- Log error but **DO NOT block** the link status update
+- Return successful status update response
+- User can still see link status in UI; just won't receive email
 
-## Deployment Checklist
+This ensures link health tracking continues independently of email delivery.
 
-- [ ] Update security findings to mark false positives
-- [ ] Verify security scan shows 0 errors
-- [ ] Attempt custom domain update
-- [ ] (Optional) Implement Awin edge function for credential storage
