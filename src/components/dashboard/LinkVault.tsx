@@ -156,9 +156,9 @@ export function LinkVault() {
     setScanningLinkId(linkId);
 
     try {
-      // Call Edge Function
+      // Call Edge Function with linkId for alert detection
       const { data, error } = await supabase.functions.invoke<ScanResult>("scan-link", {
-        body: { url },
+        body: { url, linkId },
       });
 
       if (error) throw error;

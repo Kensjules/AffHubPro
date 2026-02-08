@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           http_status_code: number | null
           id: string
+          last_alert_sent_at: string | null
           last_checked_at: string | null
           merchant_name: string | null
           network: string
@@ -34,6 +35,7 @@ export type Database = {
           created_at?: string
           http_status_code?: number | null
           id?: string
+          last_alert_sent_at?: string | null
           last_checked_at?: string | null
           merchant_name?: string | null
           network: string
@@ -48,6 +50,7 @@ export type Database = {
           created_at?: string
           http_status_code?: number | null
           id?: string
+          last_alert_sent_at?: string | null
           last_checked_at?: string | null
           merchant_name?: string | null
           network?: string
