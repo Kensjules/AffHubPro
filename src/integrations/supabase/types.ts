@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       affiliate_links: {
         Row: {
+          campaign_source: string | null
           created_at: string
           http_status_code: number | null
           id: string
@@ -29,6 +30,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          campaign_source?: string | null
           created_at?: string
           http_status_code?: number | null
           id?: string
@@ -42,6 +44,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          campaign_source?: string | null
           created_at?: string
           http_status_code?: number | null
           id?: string
