@@ -20,14 +20,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Search, Link2, Loader2 } from "lucide-react";
+import { Plus, Search, Link2, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 type Network = "Awin" | "ShareASale" | "Other";
-type Status = "active" | "paused" | "error";
 
 interface AffiliateLink {
   id: string;
@@ -39,6 +38,14 @@ interface AffiliateLink {
   created_at: string;
 }
 
+interface ScanResult {
+  status: "active" | "error" | "unknown";
+  httpCode: number;
+  responseTime: number;
+  finalUrl: string;
+  error?: string;
+}
+
 export function LinkVault() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -48,6 +55,10 @@ export function LinkVault() {
   const [merchantName, setMerchantName] = useState("");
   const [network, setNetwork] = useState<Network>("ShareASale");
   const [campaignSource, setCampaignSource] = useState("");
+
+  // Scanning state
+  const [scanningLinkId, setScanningLinkId] = useState<string | null>(null);
+  const [lastScanned, setLastScanned] = useState<Record<string, number>>({});
 
   // Fetch links
   const { data: links = [], isLoading } = useQuery({
@@ -133,13 +144,72 @@ export function LinkVault() {
     addLinkMutation.mutate();
   };
 
-  const handleScanLink = (linkId: string) => {
-    toast.info("Link scan coming soon!", {
-      description: "This feature will check your link health and status.",
-    });
+  const handleScanLink = async (linkId: string, url: string) => {
+    // Check cooldown (5 seconds)
+    if (lastScanned[linkId] && Date.now() - lastScanned[linkId] < 5000) {
+      const remaining = Math.ceil((5000 - (Date.now() - lastScanned[linkId])) / 1000);
+      toast.warning(`Please wait ${remaining}s before scanning again`);
+      return;
+    }
+
+    // Set scanning state
+    setScanningLinkId(linkId);
+
+    try {
+      // Call Edge Function
+      const { data, error } = await supabase.functions.invoke<ScanResult>("scan-link", {
+        body: { url },
+      });
+
+      if (error) throw error;
+
+      if (!data) {
+        throw new Error("No response from scan");
+      }
+
+      // Map scan result to database status
+      const dbStatus = data.status === "active" ? "active" : data.status === "error" ? "broken" : "error";
+
+      // Update database with result
+      await supabase
+        .from("affiliate_links")
+        .update({ 
+          status: dbStatus,
+          http_status_code: data.httpCode,
+          last_checked_at: new Date().toISOString(),
+        })
+        .eq("id", linkId);
+
+      // Invalidate queries to refresh UI
+      queryClient.invalidateQueries({ queryKey: ["link-vault"] });
+      queryClient.invalidateQueries({ queryKey: ["affiliate-links"] });
+
+      // Show success toast
+      if (data.status === "active") {
+        toast.success(`✓ Link active (${data.httpCode}) - ${data.responseTime}ms`);
+      } else {
+        toast.error(`✗ Link ${data.status} (${data.httpCode || "timeout"})`);
+      }
+
+      // Update cooldown
+      setLastScanned((prev) => ({ ...prev, [linkId]: Date.now() }));
+    } catch (err) {
+      console.error("Scan error:", err);
+      toast.error("Scan failed - please try again");
+    } finally {
+      setScanningLinkId(null);
+    }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, isScanning: boolean = false) => {
+    if (isScanning) {
+      return (
+        <Badge className="bg-primary/10 text-primary border border-primary/20 animate-pulse">
+          Scanning...
+        </Badge>
+      );
+    }
+    
     switch (status) {
       case "active":
         return (
@@ -331,16 +401,21 @@ export function LinkVault() {
                         <TableCell className="text-muted-foreground">
                           {link.campaign_source || "—"}
                         </TableCell>
-                        <TableCell>{getStatusBadge(link.status)}</TableCell>
+                        <TableCell>{getStatusBadge(link.status, scanningLinkId === link.id)}</TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleScanLink(link.id)}
+                            onClick={() => handleScanLink(link.id, link.url)}
+                            disabled={scanningLinkId === link.id}
                             className="text-muted-foreground hover:text-foreground"
                           >
-                            <Search className="w-4 h-4" />
-                            Scan
+                            {scanningLinkId === link.id ? (
+                              <RefreshCw className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Search className="w-4 h-4" />
+                            )}
+                            {scanningLinkId === link.id ? "Scanning" : "Scan"}
                           </Button>
                         </TableCell>
                       </TableRow>

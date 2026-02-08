@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.store-awin-credentials]
 verify_jwt = false
+
+[functions.scan-link]
+verify_jwt = false
