@@ -24,6 +24,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ShareASaleConnectDialog } from "@/components/integrations/ShareASaleConnectDialog";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { LiveRevenueFeed } from "@/components/dashboard/LiveRevenueFeed";
+import { LinkVault } from "@/components/dashboard/LinkVault";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -415,6 +416,9 @@ export default function Settings() {
             {activeTab === "datahub" && (
               <div className="space-y-6">
                 <LiveRevenueFeed />
+                
+                {/* Link Vault */}
+                <LinkVault />
                 
                 {/* Quick Actions */}
                 <div className="glass rounded-xl p-6 space-y-4">
