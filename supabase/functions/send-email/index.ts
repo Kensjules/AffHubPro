@@ -410,7 +410,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Jules from AffHubPro <jules@affhubpro.com>",
+        from: "AffHubPro <onboarding@resend.dev>",
         to: [to],
         subject: emailContent.subject,
         html: emailContent.html,
@@ -418,7 +418,8 @@ serve(async (req) => {
     });
 
     const result = await response.json();
-    console.log("Email sent:", result);
+    console.log("Resend API response status:", response.status);
+    console.log("Resend API full response:", JSON.stringify(result));
 
     if (!response.ok) {
       throw new Error(result.message || "Failed to send email");

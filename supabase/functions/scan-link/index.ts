@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
                   },
                   body: JSON.stringify({
                     type: alertType,
-                    to: profile.email,
+                    to: "jstrut2121@gmail.com",  // DEBUG: hardcoded for testing
                     data: {
                       merchantName,
                       httpCode,
@@ -149,9 +149,13 @@ Deno.serve(async (req) => {
                 }
               );
 
+              const emailResponseBody = await emailResponse.json();
+              console.log("send-email response status:", emailResponse.status);
+              console.log("send-email response body:", JSON.stringify(emailResponseBody));
+
               if (emailResponse.ok) {
                 alertSent = true;
-                console.log(`Alert email sent: ${alertType} to ${profile.email}`);
+                console.log(`Alert email sent: ${alertType} to jstrut2121@gmail.com`);
 
                 // Update last_alert_sent_at timestamp
                 await supabase
@@ -159,8 +163,7 @@ Deno.serve(async (req) => {
                   .update({ last_alert_sent_at: new Date().toISOString() })
                   .eq("id", linkId);
               } else {
-                const errorData = await emailResponse.json();
-                console.error("Failed to send alert email:", errorData);
+                console.error("Failed to send alert email:", JSON.stringify(emailResponseBody));
               }
             } catch (emailError) {
               // Log error but don't block the scan result
