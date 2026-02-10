@@ -128,7 +128,6 @@ Deno.serve(async (req) => {
             alertType = isBreakingChange ? "link_broken" : "link_recovered";
 
             try {
-              // Call send-email function
               const emailResponse = await fetch(
                 `${SUPABASE_URL}/functions/v1/send-email`,
                 {
@@ -139,7 +138,7 @@ Deno.serve(async (req) => {
                   },
                   body: JSON.stringify({
                     type: alertType,
-                    to: "jstrut2121@gmail.com",  // DEBUG: hardcoded for testing
+                    to: profile.email,
                     data: {
                       merchantName,
                       httpCode,
@@ -149,24 +148,17 @@ Deno.serve(async (req) => {
                 }
               );
 
-              const emailResponseBody = await emailResponse.json();
-              console.log("send-email response status:", emailResponse.status);
-              console.log("send-email response body:", JSON.stringify(emailResponseBody));
-
               if (emailResponse.ok) {
                 alertSent = true;
-                console.log(`Alert email sent: ${alertType} to jstrut2121@gmail.com`);
-
-                // Update last_alert_sent_at timestamp
                 await supabase
                   .from("affiliate_links")
                   .update({ last_alert_sent_at: new Date().toISOString() })
                   .eq("id", linkId);
               } else {
-                console.error("Failed to send alert email:", JSON.stringify(emailResponseBody));
+                const errorBody = await emailResponse.text();
+                console.error("Failed to send alert email:", errorBody);
               }
             } catch (emailError) {
-              // Log error but don't block the scan result
               console.error("Error sending alert email:", emailError);
             }
           }
