@@ -1,69 +1,71 @@
 
-# Debug Plan: Fix Resend Email Alert Delivery
 
-## Root Cause Analysis
+# Refactor scan-link: Remove Debug Code and Stabilize
 
-Two issues are preventing email delivery:
+## Summary
 
-1. **Unverified "From" address**: The `send-email` function uses `jules@affhubpro.com` as the sender. If this domain is not verified in Resend, all emails silently fail. For testing, Resend requires using `onboarding@resend.dev`.
+Three targeted changes to `supabase/functions/scan-link/index.ts` to move from debug to production-ready state. The `send-email` function needs no changes -- the `from` address (`onboarding@resend.dev`) is already correct and its logging is appropriate.
 
-2. **Insufficient logging**: The `scan-link` function logs success/failure of the `send-email` call but does not capture the full Resend API response body, making it impossible to diagnose delivery issues from edge function logs.
+## Changes
 
-## Changes Required
+### 1. Restore dynamic email recipient (line 142)
 
-### File 1: `supabase/functions/send-email/index.ts`
+Replace the hardcoded debug recipient with the dynamic `profile.email`:
 
-**Change the "from" address** (line 413) from:
 ```
-from: "Jules from AffHubPro <jules@affhubpro.com>"
-```
-to:
-```
-from: "AffHubPro <onboarding@resend.dev>"
-```
-
-**Add detailed response logging** after the Resend API call (around line 420-421), expanding the existing `console.log` to include the full response status and body:
-```typescript
-const result = await response.json();
-console.log("Resend API response status:", response.status);
-console.log("Resend API full response:", JSON.stringify(result));
-```
-
-### File 2: `supabase/functions/scan-link/index.ts`
-
-**Hardcode test recipient** (line 142) -- temporarily override `profile.email` with `jstrut2121@gmail.com` for debugging:
-```typescript
+// Before (debug):
 to: "jstrut2121@gmail.com",  // DEBUG: hardcoded for testing
+
+// After (production):
+to: profile.email,
 ```
 
-**Add response body logging** after the `send-email` fetch call (around line 152-163). Capture and log the full response from the `send-email` function:
+### 2. Remove debug console.log statements (lines 153-154, 158)
+
+Remove the three debug log lines added during the investigation:
+
+- Line 153: `console.log("send-email response status:", ...)`
+- Line 154: `console.log("send-email response body:", ...)`
+- Line 158: `console.log("Alert email sent: ... to jstrut2121@gmail.com")`
+
+Keep `console.error` on line 166 (failed alerts) and line 170 (catch block) -- these are useful for production monitoring.
+
+### 3. UI "Scan failed" root cause
+
+The function already returns a valid HTTP 200 JSON response with `status`, `httpCode`, `responseTime`, `finalUrl`, `alertSent`, and `alertType` fields (lines 177-190). The "Scan failed" error is not caused by a missing response -- it is caused by the frontend's `LinkVault.tsx` error handling. The `supabase.functions.invoke` call throws when it encounters unexpected issues.
+
+After reviewing the frontend code, the response structure is correct. The most likely cause of "Scan failed" is a transient network/CORS issue or an unhandled edge case during email dispatch that causes the function to throw before reaching the return statement. The error handling in the `catch` block (line 168-171) already prevents this, so removing the debug `await emailResponse.json()` call (which could throw on non-JSON responses) and ensuring it is wrapped safely will stabilize things.
+
+**Safeguard**: Wrap the `emailResponseBody` parsing in a try-catch to prevent non-JSON responses from crashing the function:
+
 ```typescript
-const emailResponseBody = await emailResponse.json();
-console.log("send-email response status:", emailResponse.status);
-console.log("send-email response body:", JSON.stringify(emailResponseBody));
+try {
+  const emailResponse = await fetch(...);
+
+  if (emailResponse.ok) {
+    alertSent = true;
+    await supabase
+      .from("affiliate_links")
+      .update({ last_alert_sent_at: new Date().toISOString() })
+      .eq("id", linkId);
+  } else {
+    const errorBody = await emailResponse.text();
+    console.error("Failed to send alert email:", errorBody);
+  }
+} catch (emailError) {
+  console.error("Error sending alert email:", emailError);
+}
 ```
 
-### File 3: `src/components/dashboard/LinkVault.tsx`
+## Technical Details
 
-No changes needed -- the frontend already passes `linkId` to the edge function and displays scan results correctly.
+### Files modified
+- `supabase/functions/scan-link/index.ts` -- remove debug code, restore dynamic recipient, harden email response parsing
 
-## Implementation Sequence
+### Files NOT modified
+- `supabase/functions/send-email/index.ts` -- `from` address is already `onboarding@resend.dev`, logging is appropriate for production
+- `src/components/dashboard/LinkVault.tsx` -- no changes needed, frontend handles responses correctly
 
-1. Update `send-email/index.ts`: Change "from" address to `onboarding@resend.dev` and enhance logging
-2. Update `scan-link/index.ts`: Hardcode test recipient and add response logging
-3. Deploy both edge functions
-4. Test by scanning a known broken URL from the Link Vault UI
-5. Check edge function logs for the full Resend API response
+### Deployment
+Both edge functions will be redeployed automatically after changes.
 
-## Post-Debug Reversion Steps
-
-Once email delivery is confirmed working:
-- Revert the "from" address to `jules@affhubpro.com` (after verifying the domain in Resend)
-- Remove the hardcoded `jstrut2121@gmail.com` recipient
-- Keep the enhanced logging (it is useful for production monitoring)
-
-## Success Criteria
-
-- Edge function logs show a `200` response from the Resend API with a message ID
-- An email arrives at `jstrut2121@gmail.com` with the "Broken Link Detected" template
-- The `last_alert_sent_at` column updates in the database after a successful alert
