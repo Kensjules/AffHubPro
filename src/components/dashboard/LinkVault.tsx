@@ -21,6 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Link2, Loader2, RefreshCw } from "lucide-react";
+import { BulkImportDialog } from "./BulkImportDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -251,14 +252,17 @@ export function LinkVault() {
   return (
     <div className="space-y-6">
       {/* Section Header */}
-      <div>
-        <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
-          <Link2 className="w-5 h-5 text-primary" />
-          Link Vault
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Store and manage your affiliate links in one place. Track performance and detect broken links.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+            <Link2 className="w-5 h-5 text-primary" />
+            Link Vault
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Store and manage your affiliate links in one place. Track performance and detect broken links.
+          </p>
+        </div>
+        <BulkImportDialog />
       </div>
 
       {/* Quick-Add Form */}
