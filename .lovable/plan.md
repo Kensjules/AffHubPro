@@ -1,34 +1,27 @@
 
 
-# Sender Update & Identity Test Verification
+# Landing Page V1 Content Update
 
-## 1. Sender Address Status: Already Correct
+## Changes
 
-The `send-email` edge function (line 413) already uses:
-```
-from: "Jules <jules@affhubpro.com>"
-```
+### 1. Hero Section (`src/components/landing/HeroSection.tsx`)
+- **Subheading** (line 42-48): Replace current text with "Track your ShareASale & Awin performance with crystal-clear analytics. See your earnings, clicks, and best products in one beautiful dashboard."
+- **Stats section** (lines 56-60): Replace the three `StatItem` components with three text-based value propositions:
+  - ✓ ShareASale/Awin Integration Live
+  - ✓ Real-Time Data Sync
+  - ✓ Built for Affiliate Marketers
 
-This was updated in the previous approved change. Since ALL email types (welcome, password_reset, sync_failed, link_broken, link_recovered) route through this single function, the sender is already correct universally. **No code changes needed.**
+### 2. Features Section (`src/components/landing/FeaturesSection.tsx`)
+- **"All Networks" feature** (line 30): Change `title` to `"ShareASale & Awin Specialist"`
+- **Description** (line 31): Change to `"Deep integration with ShareASale (part of the Awin Group) is live now. More networks coming in V2 based on user demand."`
 
-## 2. Identity Test Link Scan
+### 3. Footer (`src/components/landing/Footer.tsx`)
+- Add a small disclaimer note below the existing copyright line: `"AffHubPro is an independent tool and is not officially affiliated with ShareASale or Awin."`
 
-To verify the alert system end-to-end with the new sender:
+### Files modified
+- `src/components/landing/HeroSection.tsx`
+- `src/components/landing/FeaturesSection.tsx`
+- `src/components/landing/Footer.tsx`
 
-1. **Reset the Identity Test link** — Set its `status` to `active` and clear `last_alert_sent_at` so the alert logic triggers on the next scan
-2. **Invoke the scan-link edge function** with the Identity Test link's URL and ID
-3. **Check edge function logs** for the Resend API response (status 200 + message ID)
-4. **Confirm email receipt** at the dynamic recipient address from `jules@affhubpro.com`
-
-## 3. Files Modified
-
-None — the sender address is already correct. This plan only requires database operations and edge function invocations for testing.
-
-## 4. Technical Steps (Implementation Mode)
-
-- Query `affiliate_links` to find the Identity Test link's ID and URL
-- Run a database update to reset its status for a clean test
-- Invoke `scan-link` via the edge function test tool
-- Read edge function logs to confirm Resend response
-- Report results
+No styling, layout, or structural changes required.
 
