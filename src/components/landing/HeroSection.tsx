@@ -39,9 +39,7 @@ export function HeroSection() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up text-balance" 
             style={{ animationDelay: "0.2s" }}
           >
-            Consolidate all your affiliate accounts, automate promotions across
-            social platforms, launch custom websites, and track every sale with
-            precision — all from a single, powerful dashboard.
+            Track your ShareASale & Awin performance with crystal-clear analytics. See your earnings, clicks, and best products in one beautiful dashboard.
           </p>
 
           {/* CTAs */}
@@ -68,9 +66,9 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-12 pt-8 animate-fade-in-up" 
             style={{ animationDelay: "0.4s" }}
           >
-            <StatItem value="50+" label="Affiliate Networks" />
-            <StatItem value="10K+" label="Active Users" />
-            <StatItem value="$2M+" label="Revenue Tracked" />
+            <span className="text-sm font-medium text-primary">✓ ShareASale/Awin Integration Live</span>
+            <span className="text-sm font-medium text-primary">✓ Real-Time Data Sync</span>
+            <span className="text-sm font-medium text-primary">✓ Built for Affiliate Marketers</span>
           </div>
         </div>
       </div>

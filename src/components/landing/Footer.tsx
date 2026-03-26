@@ -20,11 +20,16 @@ export function Footer() {
             <a href="mailto:support@affhubhq.io" className="nav-link">Support</a>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} AffHubPro. All rights reserved.
+          <div className="flex flex-col items-center md:items-end gap-2">
+            <div className="flex items-center gap-4">
+              <p className="text-sm text-muted-foreground">
+                © {new Date().getFullYear()} AffHubPro. All rights reserved.
+              </p>
+              <span className="text-xs text-muted-foreground/60 font-mono">v1.0</span>
+            </div>
+            <p className="text-xs text-muted-foreground/60">
+              AffHubPro is an independent tool and is not officially affiliated with ShareASale or Awin.
             </p>
-            <span className="text-xs text-muted-foreground/60 font-mono">v1.0</span>
           </div>
         </div>
       </div>
