@@ -367,10 +367,20 @@ export function LinkVault() {
               ))}
             </div>
           ) : links.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Link2 className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No links yet.</p>
-              <p className="text-sm">Add your first affiliate link above.</p>
+            <div className="text-center py-16 space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Link2 className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Welcome! Let's get started</h3>
+                <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
+                  Import your affiliate links to start tracking performance and detecting broken links with Revenue Bodyguard.
+                </p>
+              </div>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                <BulkImportDialog />
+                <span className="text-xs text-muted-foreground">or add one manually above</span>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto -mx-6">
