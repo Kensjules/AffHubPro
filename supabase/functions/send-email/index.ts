@@ -410,7 +410,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "AffHubPro <onboarding@resend.dev>",
+        from: "Jules <jules@affhubpro.com>",
         to: [to],
         subject: emailContent.subject,
         html: emailContent.html,
