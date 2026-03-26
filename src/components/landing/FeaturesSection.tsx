@@ -28,8 +28,8 @@ const features = [
   },
   {
     icon: Globe,
-    title: "All Networks",
-    description: "Starting with ShareASale, with more affiliate networks coming soon."
+    title: "ShareASale & Awin Specialist",
+    description: "Deep integration with ShareASale (part of the Awin Group) is live now. More networks coming in V2 based on user demand."
   }
 ];
 

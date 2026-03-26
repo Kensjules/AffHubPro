@@ -66,9 +66,9 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-12 pt-8 animate-fade-in-up" 
             style={{ animationDelay: "0.4s" }}
           >
-            <StatItem value="50+" label="Affiliate Networks" />
-            <StatItem value="10K+" label="Active Users" />
-            <StatItem value="$2M+" label="Revenue Tracked" />
+            <span className="text-sm font-medium text-primary">✓ ShareASale/Awin Integration Live</span>
+            <span className="text-sm font-medium text-primary">✓ Real-Time Data Sync</span>
+            <span className="text-sm font-medium text-primary">✓ Built for Affiliate Marketers</span>
           </div>
         </div>
       </div>
