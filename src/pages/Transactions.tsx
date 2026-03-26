@@ -226,8 +226,24 @@ export default function Transactions() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                      No transactions found
+                    <td colSpan={6} className="p-16">
+                      <div className="flex flex-col items-center justify-center text-center space-y-4">
+                        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                          <AlertCircle className="w-8 h-8 text-primary" />
+                        </div>
+                        <h3 className="text-xl font-display font-semibold text-foreground">No transactions yet</h3>
+                        <p className="text-muted-foreground max-w-sm">
+                          Sync your ShareASale account to start seeing your transaction data here.
+                        </p>
+                        <Button
+                          variant="hero"
+                          onClick={() => syncShareASale()}
+                          disabled={syncing}
+                        >
+                          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                          {syncing ? 'Syncing...' : 'Sync Now'}
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 )}
