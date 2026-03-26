@@ -60,8 +60,12 @@ export function RecentTransactionsTable({ transactions, isLoading }: RecentTrans
       </div>
 
       {!transactions || transactions.length === 0 ? (
-        <div className="py-12 text-center text-muted-foreground">
-          <p>No transactions yet. Sync your account to see your data.</p>
+        <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <ArrowRight className="w-6 h-6 text-primary" />
+          </div>
+          <p className="text-foreground font-medium">No transactions yet</p>
+          <p className="text-sm text-muted-foreground max-w-xs">Sync your affiliate account to start tracking your earnings here.</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
