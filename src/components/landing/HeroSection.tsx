@@ -39,9 +39,7 @@ export function HeroSection() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up text-balance" 
             style={{ animationDelay: "0.2s" }}
           >
-            Consolidate all your affiliate accounts, automate promotions across
-            social platforms, launch custom websites, and track every sale with
-            precision — all from a single, powerful dashboard.
+            Track your ShareASale & Awin performance with crystal-clear analytics. See your earnings, clicks, and best products in one beautiful dashboard.
           </p>
 
           {/* CTAs */}
