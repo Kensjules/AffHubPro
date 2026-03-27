@@ -81,15 +81,14 @@ export function DashboardSidebar() {
           return (
             <Link
               key={item.path}
-              to={item.disabled ? "#" : item.path}
+              to={item.path}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group",
                 isActive 
                   ? "bg-primary/10 text-primary border border-primary/20" 
-                  : "text-muted-foreground hover:text-foreground hover:bg-card/50",
-                item.disabled && "opacity-50 cursor-not-allowed"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
               )}
-              onClick={(e) => item.disabled && e.preventDefault()}
+            >
             >
               <item.icon className={cn(
                 "w-5 h-5 transition-colors",
