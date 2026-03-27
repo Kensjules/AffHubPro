@@ -63,6 +63,10 @@ export default function Settings() {
     syncNow: syncAwin
   } = useAwinIntegration();
 
+  // Subscription
+  const { isSubscribed, isProPlan, subscriptionEnd, isLoading: subLoading, openPortal } = useSubscription();
+  const [openingPortal, setOpeningPortal] = useState(false);
+
   const [activeTab, setActiveTab] = useState<Tab>("datahub");
   
   // Dialog states
