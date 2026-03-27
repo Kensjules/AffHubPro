@@ -19,7 +19,7 @@ export function HeroSection() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 animate-fade-in">
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-primary">
-              Enterprise-Grade Affiliate Management
+              Your Universal Affiliate Dashboard
             </span>
           </div>
 
