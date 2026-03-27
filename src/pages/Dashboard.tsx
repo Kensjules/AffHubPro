@@ -38,7 +38,7 @@ export default function Dashboard() {
     ? formatDistanceToNow(new Date(shareASaleAccount.last_sync_at), { addSuffix: true })
     : "Never";
 
-  const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";
+  const displayName = profile?.display_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";
 
   // TEMP: Disable onboarding redirect for debugging - remove after testing complete
   // Gate: Require ShareASale connection

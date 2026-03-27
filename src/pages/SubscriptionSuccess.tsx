@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CheckCircle2 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/contexts/AuthContext";
+import { useProfile } from "@/hooks/useProfile";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
   const { refreshSubscription } = useSubscription();
+  const { user } = useAuth();
+  const { data: profile } = useProfile();
   const [countdown, setCountdown] = useState(5);
+
+  const firstName = profile?.display_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";
 
   useEffect(() => {
     refreshSubscription();
@@ -30,7 +36,7 @@ export default function SubscriptionSuccess() {
           <CheckCircle2 className="w-8 h-8 text-success" />
         </div>
         <h1 className="text-2xl font-display font-bold text-foreground">
-          Welcome to Pro!
+          Welcome to Pro, {firstName}!
         </h1>
         <p className="text-muted-foreground">
           Your subscription is now active. You have access to all Pro features including unlimited stores, CSV import, and advanced analytics.
