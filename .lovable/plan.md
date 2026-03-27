@@ -1,46 +1,52 @@
 
 
-# Fix Routing 404s, SPA Refresh, and Stripe Checkout Loop
+# Fix Stripe Subscription Status Not Reflecting After Checkout
 
-## Root Causes Identified
+## Root Cause
 
-1. **`/stores` and `/reports` 404s**: The sidebar links to these paths but no routes or pages exist in `App.tsx`.
-2. **SPA refresh 404s**: No `_redirects` file for the static host. The existing `404.html` helps but a `_redirects` is more reliable.
-3. **"Upgrade to Pro" loop**: In `Settings.tsx` (line 297), the button links to `/#pricing`. But `FrontDoorRoute` in `App.tsx` redirects authenticated users from `/` to `/dashboard` — so they never see the pricing section. This creates a dashboard loop.
+The edge function logs reveal the problem clearly. The `check-subscription` function successfully authenticates the user and finds their Stripe customer, but then **fails** when trying to list subscriptions:
 
-## Changes
-
-### 1. Create `src/pages/Stores.tsx` and `src/pages/Reports.tsx`
-Simple placeholder pages with the `DashboardSidebar` layout, showing a "Coming Monday" message. Minimal components — just the sidebar + a centered card.
-
-### 2. Register routes in `src/App.tsx`
-Add two new protected routes:
 ```
-<Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
-<Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+The provided key 'rk_test_...QEJj39' does not have the required permissions for this endpoint.
+Having the 'rak_billing_cadence_read', 'rak_subscription_read' permissions would allow this request to continue.
 ```
 
-### 3. Create `public/_redirects`
-Single line: `/* /index.html 200` — standard SPA catch-all for Netlify/Lovable hosting.
+The `STRIPE_SECRET_KEY` stored in the backend is a **restricted key** (`rk_test_...`) that lacks permissions to read subscriptions. The `check-subscription` function errors out, so the UI always shows "Starter Plan (Free)".
 
-### 4. Fix "Upgrade to Pro" in Settings.tsx
-Replace the `<a href="/#pricing">Upgrade to Pro</a>` link (line 296-298) with a button that directly calls `startCheckout()` from `useSubscription`. This bypasses the redirect loop entirely — clicking "Upgrade to Pro" will invoke the edge function and open Stripe Checkout in a new tab.
+This is **not** a webhook issue or a UI refresh issue — the subscription check itself fails at the Stripe API level.
 
-```tsx
-<Button variant="hero" onClick={handleCheckout} disabled={checkingOut}>
-  {checkingOut ? "Processing..." : "Upgrade to Pro"}
-</Button>
-```
+## Fix
 
-This requires adding `startCheckout` to the existing `useSubscription` destructure and a `handleCheckout` + `checkingOut` state in the Settings component.
+### 1. Update the Stripe Secret Key (required — user action)
 
-## Files
+The restricted key needs the `rak_subscription_read` and `rak_billing_cadence_read` permissions added. The user must either:
 
-| File | Action |
+- **Option A**: Go to Stripe Dashboard → API Keys → edit the restricted key to add "Subscriptions: Read" and "Billing cadence: Read" permissions
+- **Option B**: Replace the restricted key with a full `sk_test_...` secret key
+
+Then update the `STRIPE_SECRET_KEY` secret in the backend.
+
+### 2. Add `client_reference_id` to checkout session (code change)
+
+In `supabase/functions/create-checkout/index.ts`, add `client_reference_id: user.id` to the checkout session creation. This links the Stripe session to the Supabase user for future webhook support.
+
+### 3. Add aggressive retry polling on SubscriptionSuccess page (code change)
+
+In `src/pages/SubscriptionSuccess.tsx`, change `refreshSubscription()` to poll every 2 seconds for 30 seconds until `isSubscribed` becomes true, ensuring the UI reflects the new status even if there's a brief Stripe propagation delay.
+
+### 4. Force refresh on Settings subscription tab mount (code change)
+
+In `src/pages/Settings.tsx`, call `refreshSubscription()` when the subscription tab is activated, ensuring the latest status is always fetched.
+
+## Files Modified
+
+| File | Change |
 |---|---|
-| `src/pages/Stores.tsx` | Create — placeholder with sidebar |
-| `src/pages/Reports.tsx` | Create — placeholder with sidebar |
-| `src/App.tsx` | Add `/stores` and `/reports` routes |
-| `src/pages/Settings.tsx` | Replace pricing link with direct `startCheckout()` call |
-| `public/_redirects` | Create — SPA catch-all rule |
+| `supabase/functions/create-checkout/index.ts` | Add `client_reference_id: user.id` |
+| `src/pages/SubscriptionSuccess.tsx` | Add polling retry until subscription confirmed |
+| `src/pages/Settings.tsx` | Refresh subscription on tab switch |
+
+## Critical User Action Required
+
+The Stripe restricted key must be updated with subscription read permissions, or replaced with a full secret key. Without this, no code change will fix the issue.
 
