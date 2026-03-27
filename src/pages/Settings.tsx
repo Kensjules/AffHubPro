@@ -91,6 +91,7 @@ export default function Settings() {
 
   const tabs = [
     { id: "account" as Tab, label: "Account", icon: User },
+    { id: "subscription" as Tab, label: "Subscription", icon: CreditCard },
     { id: "integrations" as Tab, label: "Integrations", icon: Link2 },
     { id: "datahub" as Tab, label: "Data Hub", icon: Activity },
     { id: "security" as Tab, label: "Security", icon: Shield },
