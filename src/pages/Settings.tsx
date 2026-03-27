@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { useShareASaleAccount, useConnectShareASale, useDisconnectShareASale, useSyncShareASale } from "@/hooks/useShareASale";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useAwinIntegration } from "@/hooks/useAwinIntegration";
 import { formatDistanceToNow } from "date-fns";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
