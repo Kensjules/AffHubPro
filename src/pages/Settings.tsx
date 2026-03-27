@@ -244,7 +244,64 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Integrations Tab */}
+            {/* Subscription Tab */}
+            {activeTab === "subscription" && (
+              <div className="glass rounded-xl p-6 space-y-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground mb-1">Subscription</h2>
+                  <p className="text-sm text-muted-foreground">Manage your plan and billing</p>
+                </div>
+
+                {subLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="w-full max-w-md h-20" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-muted/50 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Crown className={`w-5 h-5 ${isProPlan ? "text-primary" : "text-muted-foreground"}`} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-semibold text-foreground">
+                          {isProPlan ? "Pro Plan" : "Starter Plan (Free)"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {isProPlan && subscriptionEnd
+                            ? `Renews ${new Date(subscriptionEnd).toLocaleDateString()}`
+                            : "Upgrade to unlock unlimited stores and advanced analytics"}
+                        </p>
+                      </div>
+                      {isProPlan && (
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                          Active
+                        </span>
+                      )}
+                    </div>
+
+                    {isSubscribed ? (
+                      <Button
+                        variant="glass"
+                        onClick={async () => {
+                          setOpeningPortal(true);
+                          try { await openPortal(); } catch { toast.error("Failed to open billing portal"); }
+                          setOpeningPortal(false);
+                        }}
+                        disabled={openingPortal}
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        {openingPortal ? "Opening..." : "Manage Subscription"}
+                      </Button>
+                    ) : (
+                      <Button variant="hero" asChild>
+                        <a href="/#pricing">Upgrade to Pro</a>
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "integrations" && (
               <div className="space-y-6">
                 {/* ShareASale Card */}
