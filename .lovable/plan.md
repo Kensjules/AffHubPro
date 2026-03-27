@@ -1,41 +1,41 @@
 
 
-# First-Name Greeting Update
+# Beta Launch Hotfixes
 
-## Summary
-Extract only the first name from `display_name` for greetings on Dashboard and Subscription Success pages.
+## 1. Enable Auto-Confirm Email Signups (HIGH PRIORITY)
 
-## Helper Logic (inline, no new file)
-```ts
-const firstName = (profile?.display_name?.split(" ")[0]) || user?.email?.split("@")[0] || "User";
-```
-This handles: full name → first word; single name → that name; no name → email prefix; no email → "User".
+Auth logs show `email_not_confirmed` errors blocking login. Use `cloud--configure_auth` to enable auto-confirm for the beta phase. This immediately unblocks all new and existing unconfirmed users.
 
-## Changes
+## 2. Fix Post-Signup Redirect Loop
 
-### 1. `src/pages/Dashboard.tsx` (line 41)
-**Current:** `const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";`
-**New:** `const displayName = profile?.display_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";`
+The `Signup.tsx` page (line 68) navigates to `/dashboard` immediately after `signUp()`, but since email confirmation is required, the user can't actually log in. With auto-confirm enabled (step 1), this flow will work. Additionally, the `signUp` function in `AuthContext.tsx` already sends a welcome email — but `Signup.tsx` ALSO sends one (duplicate). Remove the duplicate welcome email call from `Signup.tsx` (lines 62-67).
 
-The greeting on line ~56 already reads `Welcome back, {displayName}` — no change needed there.
+## 3. Remove "View Live Demo" Button
 
-### 2. `src/pages/SubscriptionSuccess.tsx` (lines 1-33)
-- Import `useAuth` and `useProfile`
-- Derive `firstName` using the same `.split(" ")[0]` logic
-- Change heading from `"Welcome to Pro!"` to `"Welcome to Pro, {firstName}!"`
+In `src/components/landing/HeroSection.tsx`, delete lines 56-61 (the glass button linking to `/demo`). Also remove the `Play` import from line 3.
 
-### 3. `src/components/dashboard/DashboardSidebar.tsx` (line ~93)
-The sidebar also shows `displayName` in the user profile section. This should remain the **full** display name (not first-name-only) since it's an identity label, not a greeting. **No change needed.**
+## 4. Remove "Soon" Badges from Sidebar
 
-## Test Scenarios
-| display_name | email | Dashboard greeting | Success heading |
-|---|---|---|---|
-| `"Jane Smith"` | `jane@x.com` | Welcome back, Jane | Welcome to Pro, Jane! |
-| `"Jane"` | `jane@x.com` | Welcome back, Jane | Welcome to Pro, Jane! |
-| `null` | `jane@x.com` | Welcome back, jane | Welcome to Pro, jane! |
-| `null` | `null` | Welcome back, User | Welcome to Pro, User! |
+In `src/components/dashboard/DashboardSidebar.tsx`:
+- Remove `disabled: true` from Stores and Reports nav items (lines 25-26)
+- Remove the "Soon" badge rendering (lines 101-105)
+
+## 5. First-Name Greeting
+
+Already implemented in Dashboard.tsx (line 41). No change needed.
 
 ## Files Modified
-- `src/pages/Dashboard.tsx` — 1 line change (line 41)
-- `src/pages/SubscriptionSuccess.tsx` — add imports + firstName logic + update heading text
+
+| File | Change |
+|---|---|
+| `src/components/landing/HeroSection.tsx` | Remove "View Live Demo" button + unused `Play` import |
+| `src/components/dashboard/DashboardSidebar.tsx` | Remove `disabled` flags and "Soon" badges from Stores/Reports |
+| `src/pages/Signup.tsx` | Remove duplicate welcome email call |
+| Auth config | Enable auto-confirm email signups via configure_auth tool |
+
+## What Does NOT Need Changing
+
+- **Landing page stats**: Already updated to "ShareASale/Awin Integration Live", "Real-Time Data Sync", "Built for Affiliate Marketers" — the old "50+ Affiliate Networks" / "10K+ Active Users" / "$2M+ Revenue Tracked" text no longer exists
+- **ShareASale connection**: Already optional — the onboarding gate is commented out in Dashboard.tsx (lines 43-46)
+- **First-name greeting**: Already implemented with `.split(" ")[0]` logic
 
