@@ -22,8 +22,8 @@ import { toast } from "sonner";
 const navItems = [
   { label: "Overview", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Transactions", icon: Receipt, path: "/transactions" },
-  { label: "Stores", icon: Store, path: "/stores", disabled: true },
-  { label: "Reports", icon: FileBarChart, path: "/reports", disabled: true },
+  { label: "Stores", icon: Store, path: "/stores" },
+  { label: "Reports", icon: FileBarChart, path: "/reports" },
   { label: "Integrations", icon: Plug, path: "/integrations" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
