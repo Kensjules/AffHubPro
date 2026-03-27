@@ -21,14 +21,16 @@ export function useSubscription() {
   });
 
   const checkSubscription = useCallback(async () => {
-    if (!session?.access_token) {
+    // Always get a fresh session to avoid expired token errors
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (!freshSession?.access_token) {
       setState({ isSubscribed: false, productId: null, subscriptionEnd: null, isLoading: false });
       return;
     }
 
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${freshSession.access_token}` },
       });
 
       if (error) throw error;
