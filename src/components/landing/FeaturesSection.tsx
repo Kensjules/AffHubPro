@@ -44,7 +44,7 @@ export function FeaturesSection() {
             <span className="gradient-text">track your success</span>
           </h2>
           <p className="text-muted-foreground text-lg">
-            Powerful features designed specifically for affiliate marketers who want clarity without complexity.
+            Powerful features for affiliate marketers who need one source of truth — no matter where revenue comes from.
           </p>
         </div>
 
