@@ -20,7 +20,7 @@ export function Header() {
 
         <nav className="hidden md:flex items-center gap-8">
           <a href="#features" className="nav-link">Features</a>
-          <a href="#how-it-works" className="nav-link">Workflow</a>
+          <a href="#how-it-works" className="nav-link">FAQ</a>
           <a href="#pricing" className="nav-link">Pricing</a>
         </nav>
 
