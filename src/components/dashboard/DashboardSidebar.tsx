@@ -98,11 +98,6 @@ export function DashboardSidebar() {
               {!collapsed && (
                 <>
                   <span className="font-medium text-sm">{item.label}</span>
-                  {item.disabled && (
-                    <span className="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                      Soon
-                    </span>
-                  )}
                 </>
               )}
             </Link>

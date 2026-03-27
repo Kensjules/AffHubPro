@@ -53,12 +53,6 @@ export function HeroSection() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
-            <Button variant="glass" size="xl" asChild>
-              <Link to="/demo" className="flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                View Live Demo
-              </Link>
-            </Button>
           </div>
 
           {/* Stats */}

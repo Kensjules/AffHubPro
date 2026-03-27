@@ -61,14 +61,6 @@ export default function Signup() {
       return;
     }
     
-    // Send welcome email (fire and forget - don't block user flow)
-    supabase.functions.invoke("send-email", {
-      body: {
-        type: "welcome",
-        to: email,
-        data: { name },
-      },
-    }).catch((err) => console.error("Failed to send welcome email:", err));
     
     toast.success("Account created! Welcome to AffHubPro.");
     navigate("/dashboard");
