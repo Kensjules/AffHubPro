@@ -37,7 +37,7 @@ export function HeroSection() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up text-balance" 
             style={{ animationDelay: "0.2s" }}
           >
-            Track your ShareASale & Awin performance with crystal-clear analytics. See your earnings, clicks, and best products in one beautiful dashboard.
+            One dashboard for all your affiliate partnerships — networks, direct brands, and individual links. See every earning, click, and conversion in one place.
           </p>
 
           <div 
