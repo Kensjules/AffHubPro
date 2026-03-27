@@ -45,7 +45,7 @@ export function useSubscription() {
       console.error("Failed to check subscription:", err);
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [session?.access_token]);
+  }, []);
 
   useEffect(() => {
     if (!user) {
