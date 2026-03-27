@@ -21,14 +21,16 @@ export function useSubscription() {
   });
 
   const checkSubscription = useCallback(async () => {
-    if (!session?.access_token) {
+    // Always get a fresh session to avoid expired token errors
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (!freshSession?.access_token) {
       setState({ isSubscribed: false, productId: null, subscriptionEnd: null, isLoading: false });
       return;
     }
 
     try {
       const { data, error } = await supabase.functions.invoke("check-subscription", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${freshSession.access_token}` },
       });
 
       if (error) throw error;
@@ -43,7 +45,7 @@ export function useSubscription() {
       console.error("Failed to check subscription:", err);
       setState(prev => ({ ...prev, isLoading: false }));
     }
-  }, [session?.access_token]);
+  }, []);
 
   useEffect(() => {
     if (!user) {
@@ -84,11 +86,12 @@ export function useSubscription() {
   }, [user, checkSubscription]);
 
   const startCheckout = async () => {
-    if (!session?.access_token) return;
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (!freshSession?.access_token) return;
 
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${freshSession.access_token}` },
       });
 
       if (error) throw error;
@@ -102,11 +105,12 @@ export function useSubscription() {
   };
 
   const openPortal = async () => {
-    if (!session?.access_token) return;
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (!freshSession?.access_token) return;
 
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${freshSession.access_token}` },
       });
 
       if (error) throw error;
