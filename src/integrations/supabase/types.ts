@@ -68,6 +68,8 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          stripe_customer_id: string | null
+          subscription_status: string
           timezone: string | null
           updated_at: string | null
         }
@@ -76,6 +78,8 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
+          stripe_customer_id?: string | null
+          subscription_status?: string
           timezone?: string | null
           updated_at?: string | null
         }
@@ -84,6 +88,8 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          stripe_customer_id?: string | null
+          subscription_status?: string
           timezone?: string | null
           updated_at?: string | null
         }
