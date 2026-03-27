@@ -69,6 +69,14 @@ export default function Settings() {
   const [openingPortal, setOpeningPortal] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab>("datahub");
+
+  // Force refresh subscription status when switching to subscription tab
+  const { refreshSubscription } = useSubscription();
+  useEffect(() => {
+    if (activeTab === "subscription") {
+      refreshSubscription();
+    }
+  }, [activeTab, refreshSubscription]);
   
   // Dialog states
   const [showSASDialog, setShowSASDialog] = useState(false);
