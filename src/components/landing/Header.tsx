@@ -18,7 +18,7 @@ export function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
           <a href="#features" className="nav-link">Features</a>
           <a href="#how-it-works" className="nav-link">How It Works</a>
           <a href="#pricing" className="nav-link">Pricing</a>
