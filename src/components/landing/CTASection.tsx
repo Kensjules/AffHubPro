@@ -21,7 +21,7 @@ export function CTASection() {
             <span className="gradient-text">affiliate earnings?</span>
           </h2>
           <p className="text-muted-foreground text-lg mb-8 max-w-xl mx-auto">
-            Join thousands of affiliate marketers who've simplified their analytics with AffHubPro.
+            Consolidate every affiliate partnership — networks, brands, and direct links — into one clear view.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="hero" size="xl" asChild>

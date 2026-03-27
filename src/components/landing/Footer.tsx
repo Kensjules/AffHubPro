@@ -10,7 +10,7 @@ export function Footer() {
               <span className="text-primary-foreground font-bold text-sm">A</span>
             </div>
             <span className="font-display font-semibold text-lg text-foreground">
-              Aff<span className="text-muted-foreground">Hub</span>HQ
+              Aff<span className="text-muted-foreground">Hub</span>Pro
             </span>
           </div>
 
@@ -28,7 +28,7 @@ export function Footer() {
               <span className="text-xs text-muted-foreground/60 font-mono">v1.0</span>
             </div>
             <p className="text-xs text-muted-foreground/60">
-              AffHubPro is an independent tool and is not officially affiliated with ShareASale or Awin.
+              AffHubPro is an independent analytics platform. Not affiliated with any affiliate network.
             </p>
           </div>
         </div>

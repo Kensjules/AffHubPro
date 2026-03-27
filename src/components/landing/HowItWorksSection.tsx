@@ -10,8 +10,8 @@ const steps = [
   {
     icon: Link2,
     step: "02",
-    title: "Connect ShareASale",
-    description: "Enter your ShareASale API credentials. We'll validate them instantly and start syncing."
+    title: "Import Your Data",
+    description: "Connect a network via API or import any affiliate data with CSV. We support ShareASale, Awin, Impact, and direct brand exports."
   },
   {
     icon: LayoutDashboard,

@@ -19,7 +19,7 @@ export function HeroSection() {
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-primary/30 bg-primary/5 animate-fade-in">
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-primary">
-              Enterprise-Grade Affiliate Management
+              Your Universal Affiliate Dashboard
             </span>
           </div>
 
@@ -37,7 +37,7 @@ export function HeroSection() {
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in-up text-balance" 
             style={{ animationDelay: "0.2s" }}
           >
-            Track your ShareASale & Awin performance with crystal-clear analytics. See your earnings, clicks, and best products in one beautiful dashboard.
+            One dashboard for all your affiliate partnerships — networks, direct brands, and individual links. See every earning, click, and conversion in one place.
           </p>
 
           <div 
@@ -56,9 +56,9 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-12 pt-8 animate-fade-in-up" 
             style={{ animationDelay: "0.4s" }}
           >
-            <span className="text-sm font-medium text-primary">✓ ShareASale/Awin Integration Live</span>
-            <span className="text-sm font-medium text-primary">✓ Real-Time Data Sync</span>
-            <span className="text-sm font-medium text-primary">✓ Built for Affiliate Marketers</span>
+            <span className="text-sm font-medium text-primary">✓ Works With Any Affiliate Source</span>
+            <span className="text-sm font-medium text-primary">✓ Universal CSV Import</span>
+            <span className="text-sm font-medium text-primary">✓ Networks, Brands & Direct Links</span>
           </div>
         </div>
       </div>
