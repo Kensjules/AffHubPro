@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Check, Loader2 } from "lucide-react";
+import { Check, Loader2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -9,17 +9,22 @@ import { useState } from "react";
 
 const PRO_PRODUCT_ID = "prod_UDrcZFHFhVw4Lo";
 
+interface PlanFeature {
+  text: string;
+  highlight?: boolean;
+}
+
 const pricingPlans = [
   {
     name: "Starter",
     price: "$0",
     period: "forever",
     features: [
-      "Track 1 Store",
-      "Manual Data Entry",
-      "30-Day History",
-      "Basic Support",
-    ],
+      { text: "Track 1 Store" },
+      { text: "Manual Data Entry" },
+      { text: "30-Day History" },
+      { text: "Basic Support" },
+    ] as PlanFeature[],
     buttonText: "Get Started",
     buttonVariant: "hero" as const,
     featured: false,
@@ -31,32 +36,16 @@ const pricingPlans = [
     period: "/mo",
     badge: "Most Popular",
     features: [
-      "Track Unlimited Stores",
-      "One-Click CSV Import",
-      "Advanced Analytics",
-      "Lifetime History",
-      "Priority Support",
-    ],
+      { text: "Track Unlimited Stores" },
+      { text: "Unlimited CSV Imports", highlight: true },
+      { text: "Advanced Profit Analytics", highlight: true },
+      { text: "Lifetime History" },
+      { text: "Priority Support" },
+    ] as PlanFeature[],
     buttonText: "Start Free Trial",
     buttonVariant: "default" as const,
     featured: true,
     action: "checkout" as const,
-  },
-  {
-    name: "Agency",
-    price: "$99",
-    period: "/mo",
-    features: [
-      "Everything in Pro",
-      "5 Team Members",
-      "White-Label Reports",
-      "Dedicated Account Manager",
-      "API Access",
-    ],
-    buttonText: "Join Waitlist",
-    buttonVariant: "outline" as const,
-    featured: false,
-    action: "waitlist" as const,
   },
 ];
 
@@ -93,7 +82,6 @@ export function PricingSection() {
 
   return (
     <section id="pricing" className="py-24 relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-[hsl(217,91%,60%)]/5 rounded-full blur-3xl" />
@@ -109,7 +97,7 @@ export function PricingSection() {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {pricingPlans.map((plan, index) => {
             const active = isActivePlan(plan);
             return (
@@ -147,14 +135,18 @@ export function PricingSection() {
                 <CardContent className="pt-6">
                   <ul className="space-y-3 mb-8">
                     {plan.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-3">
+                      <li key={feature.text} className="flex items-center gap-3">
                         <div className={`flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
                           plan.featured ? "bg-primary/20" : "bg-muted"
                         }`}>
-                          <Check className={`w-3 h-3 ${plan.featured ? "text-primary" : "text-muted-foreground"}`} />
+                          {feature.highlight ? (
+                            <Star className="w-3 h-3 text-primary fill-primary" />
+                          ) : (
+                            <Check className={`w-3 h-3 ${plan.featured ? "text-primary" : "text-muted-foreground"}`} />
+                          )}
                         </div>
-                        <span className="text-sm text-muted-foreground">
-                          {feature}
+                        <span className={`text-sm ${feature.highlight ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+                          {feature.text}
                         </span>
                       </li>
                     ))}
@@ -183,10 +175,6 @@ export function PricingSection() {
                         <Link to="/signup">Start Free Trial</Link>
                       </Button>
                     )
-                  ) : plan.action === "waitlist" ? (
-                    <Button variant={plan.buttonVariant} className="w-full" disabled>
-                      {plan.buttonText}
-                    </Button>
                   ) : (
                     <Button
                       variant={plan.buttonVariant}
