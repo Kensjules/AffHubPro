@@ -86,11 +86,12 @@ export function useSubscription() {
   }, [user, checkSubscription]);
 
   const startCheckout = async () => {
-    if (!session?.access_token) return;
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (!freshSession?.access_token) return;
 
     try {
       const { data, error } = await supabase.functions.invoke("create-checkout", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${freshSession.access_token}` },
       });
 
       if (error) throw error;
@@ -104,11 +105,12 @@ export function useSubscription() {
   };
 
   const openPortal = async () => {
-    if (!session?.access_token) return;
+    const { data: { session: freshSession } } = await supabase.auth.getSession();
+    if (!freshSession?.access_token) return;
 
     try {
       const { data, error } = await supabase.functions.invoke("customer-portal", {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${freshSession.access_token}` },
       });
 
       if (error) throw error;
