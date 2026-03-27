@@ -1,8 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function CTASection() {
+  const { user } = useAuth();
+
   return (
     <section className="py-24 relative overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -22,15 +25,17 @@ export function CTASection() {
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="hero" size="xl" asChild>
-              <Link to="/signup">
-                Start Your Free Trial
+              <Link to={user ? "/dashboard" : "/signup"}>
+                {user ? "Go to Dashboard" : "Start Your Free Trial"}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-4">
-            14-day free trial · No credit card required
-          </p>
+          {!user && (
+            <p className="text-sm text-muted-foreground mt-4">
+              14-day free trial · No credit card required
+            </p>
+          )}
         </div>
       </div>
     </section>
