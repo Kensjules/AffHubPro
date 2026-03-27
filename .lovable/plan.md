@@ -1,34 +1,46 @@
 
 
-# Verification Results — All Three Changes Already Applied
+# Fix Routing 404s, SPA Refresh, and Stripe Checkout Loop
 
-## 1. DashboardSidebar.tsx — No "Soon" Badges
-The current file contains **zero** `<Badge>` components and no text "Soon" anywhere. The nav items (Stores, Reports) are standard `<Link>` elements with no disabled state. A codebase-wide search for "Soon" across all `.tsx`/`.ts` files returned **zero matches**.
+## Root Causes Identified
 
-**No diff needed — already clean.**
+1. **`/stores` and `/reports` 404s**: The sidebar links to these paths but no routes or pages exist in `App.tsx`.
+2. **SPA refresh 404s**: No `_redirects` file for the static host. The existing `404.html` helps but a `_redirects` is more reliable.
+3. **"Upgrade to Pro" loop**: In `Settings.tsx` (line 297), the button links to `/#pricing`. But `FrontDoorRoute` in `App.tsx` redirects authenticated users from `/` to `/dashboard` — so they never see the pricing section. This creates a dashboard loop.
 
-## 2. Dashboard.tsx line 41 — First-name logic already active
-```ts
-const displayName = profile?.display_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";
+## Changes
+
+### 1. Create `src/pages/Stores.tsx` and `src/pages/Reports.tsx`
+Simple placeholder pages with the `DashboardSidebar` layout, showing a "Coming Monday" message. Minimal components — just the sidebar + a centered card.
+
+### 2. Register routes in `src/App.tsx`
+Add two new protected routes:
 ```
-The `.split(" ")[0]` is already present. "Jack Welch" → "Jack".
+<Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
+<Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+```
 
-**No diff needed — already correct.**
+### 3. Create `public/_redirects`
+Single line: `/* /index.html 200` — standard SPA catch-all for Netlify/Lovable hosting.
 
-## 3. Onboarding page — Does not exist
-The `/onboarding` route and component were permanently removed in a prior iteration. There is no onboarding file in the project.
+### 4. Fix "Upgrade to Pro" in Settings.tsx
+Replace the `<a href="/#pricing">Upgrade to Pro</a>` link (line 296-298) with a button that directly calls `startCheckout()` from `useSubscription`. This bypasses the redirect loop entirely — clicking "Upgrade to Pro" will invoke the edge function and open Stripe Checkout in a new tab.
 
-**File not found: No onboarding page exists.**
+```tsx
+<Button variant="hero" onClick={handleCheckout} disabled={checkingOut}>
+  {checkingOut ? "Processing..." : "Upgrade to Pro"}
+</Button>
+```
 
----
+This requires adding `startCheckout` to the existing `useSubscription` destructure and a `handleCheckout` + `checkingOut` state in the Settings component.
 
-## Why You May Still See Old UI
+## Files
 
-The code is correct. If the old UI persists, the cause is **browser cache or service worker cache**, not the source code. To force a fresh load:
-
-1. Open DevTools → Application → Storage → "Clear site data"
-2. Or open an **incognito/private window** and navigate to the dashboard
-3. Or append `?v=2` to the URL: `https://trans-a-lyze.lovable.app/dashboard?v=2`
-
-If the issue persists even in incognito, the published deployment may be stale — republishing the app will push the current source to production.
+| File | Action |
+|---|---|
+| `src/pages/Stores.tsx` | Create — placeholder with sidebar |
+| `src/pages/Reports.tsx` | Create — placeholder with sidebar |
+| `src/App.tsx` | Add `/stores` and `/reports` routes |
+| `src/pages/Settings.tsx` | Replace pricing link with direct `startCheckout()` call |
+| `public/_redirects` | Create — SPA catch-all rule |
 
