@@ -40,7 +40,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-type Tab = "account" | "integrations" | "datahub" | "security";
+type Tab = "account" | "subscription" | "integrations" | "datahub" | "security";
 
 export default function Settings() {
   const { user, updatePassword } = useAuth();
