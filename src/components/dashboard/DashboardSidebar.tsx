@@ -89,7 +89,6 @@ export function DashboardSidebar() {
                   : "text-muted-foreground hover:text-foreground hover:bg-card/50"
               )}
             >
-            >
               <item.icon className={cn(
                 "w-5 h-5 transition-colors",
                 isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
