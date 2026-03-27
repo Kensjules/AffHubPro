@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight, Sparkles, Play } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 
 export function HeroSection() {
   return (
@@ -51,12 +51,6 @@ export function HeroSection() {
               <Link to="/signup">
                 Start Free Trial
                 <ArrowRight className="w-5 h-5" />
-              </Link>
-            </Button>
-            <Button variant="glass" size="xl" asChild>
-              <Link to="/demo" className="flex items-center gap-2">
-                <Play className="w-4 h-4" />
-                View Live Demo
               </Link>
             </Button>
           </div>
