@@ -53,7 +53,34 @@ export function useSubscription() {
 
     checkSubscription();
     const interval = setInterval(checkSubscription, 60_000);
-    return () => clearInterval(interval);
+
+    // Realtime listener for instant updates from webhook
+    const channel = supabase
+      .channel(`profile-sub-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          const newStatus = (payload.new as any)?.subscription_status;
+          if (newStatus === "pro" && !state.isSubscribed) {
+            // Refresh from Stripe to get full details
+            checkSubscription();
+          } else if (newStatus === "free" && state.isSubscribed) {
+            setState({ isSubscribed: false, productId: null, subscriptionEnd: null, isLoading: false });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      clearInterval(interval);
+      supabase.removeChannel(channel);
+    };
   }, [user, checkSubscription]);
 
   const startCheckout = async () => {

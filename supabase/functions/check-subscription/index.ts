@@ -65,11 +65,26 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      try {
+        const raw = subscription.current_period_end;
+        const ts = typeof raw === "number" ? raw * 1000 : Date.parse(String(raw));
+        subscriptionEnd = isNaN(ts) ? null : new Date(ts).toISOString();
+      } catch { subscriptionEnd = null; }
       productId = subscription.items.data[0].price.product;
       logStep("Active subscription found", { productId, subscriptionEnd });
     } else {
       logStep("No active subscription");
+    }
+
+    // Sync subscription status back to profiles
+    try {
+      await supabaseClient.from("profiles").update({
+        subscription_status: hasActiveSub ? "pro" : "free",
+        stripe_customer_id: customerId,
+      }).eq("id", user.id);
+      logStep("Synced profile", { status: hasActiveSub ? "pro" : "free" });
+    } catch (syncErr) {
+      logStep("Profile sync failed (non-fatal)", { error: String(syncErr) });
     }
 
     return new Response(JSON.stringify({
