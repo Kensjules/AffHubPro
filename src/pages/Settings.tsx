@@ -12,8 +12,10 @@ import {
   Trash2,
   XCircle,
   Plus,
-  Activity
-} from "lucide-react";
+  Activity,
+  CreditCard,
+  Crown,
+  ExternalLink
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
