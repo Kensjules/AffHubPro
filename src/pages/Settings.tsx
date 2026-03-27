@@ -293,8 +293,13 @@ export default function Settings() {
                         {openingPortal ? "Opening..." : "Manage Subscription"}
                       </Button>
                     ) : (
-                      <Button variant="hero" asChild>
-                        <a href="/#pricing">Upgrade to Pro</a>
+                      <Button
+                        variant="hero"
+                        onClick={async () => {
+                          try { await startCheckout(); } catch { toast.error("Failed to start checkout"); }
+                        }}
+                      >
+                        Upgrade to Pro
                       </Button>
                     )}
                   </div>

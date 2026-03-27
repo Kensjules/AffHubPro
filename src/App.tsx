@@ -16,6 +16,8 @@ import Dashboard from "./pages/Dashboard";
 import Transactions from "./pages/Transactions";
 import Integrations from "./pages/Integrations";
 import Settings from "./pages/Settings";
+import Stores from "./pages/Stores";
+import Reports from "./pages/Reports";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
