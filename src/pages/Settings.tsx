@@ -65,7 +65,7 @@ export default function Settings() {
   } = useAwinIntegration();
 
   // Subscription
-  const { isSubscribed, isProPlan, subscriptionEnd, isLoading: subLoading, openPortal } = useSubscription();
+  const { isSubscribed, isProPlan, subscriptionEnd, isLoading: subLoading, openPortal, startCheckout } = useSubscription();
   const [openingPortal, setOpeningPortal] = useState(false);
 
   const [activeTab, setActiveTab] = useState<Tab>("datahub");
