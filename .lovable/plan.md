@@ -1,42 +1,114 @@
 
 
-# Bulk Import Links — Paste URLs Feature
+# Link Health Monitor Enhancement — Tabbed Import, Brand Sync, Live Table
 
 ## Overview
-Add a "Bulk Import" button (outlined style) next to the existing "Add Link" button in the Link Health Monitor header. It opens a centered dialog with a large textarea where users paste one URL per line. On submit, URLs are trimmed, deduplicated against existing links, inserted into `affiliate_links`, and a toast confirms "Imported X links".
+Merge the two separate import dialogs (BulkPasteImportDialog + BulkImportDialog) into a single tabbed dialog, add XLSX support, extract brand names from imports into `custom_brands`, add a live results table with green/red/yellow status badges, and implement URL auto-protocol prepending.
 
-## Changes — Single file: `src/components/dashboard/BrokenLinkScanner.tsx`
+## 1. New Unified Import Dialog
 
-### UI Trigger (line 126-128 area)
-Add a new outlined button between "Add Link" and "Scan Now":
-```tsx
-<Button variant="outline" size="sm">
-  <Upload className="w-4 h-4" />
-  Bulk Import
-</Button>
+**File: `src/components/dashboard/UnifiedImportDialog.tsx`** (new)
+
+A single Dialog with two Tabs: "Paste Links" and "Upload CSV/Excel".
+
+- **Paste Links tab**: Large textarea (existing logic from BulkPasteImportDialog)
+- **Upload CSV/Excel tab**: Drag-and-drop zone accepting `.csv` and `.xlsx` files. CSV parsed with PapaParse (already installed). XLSX parsed with the `xlsx` library (needs install). Both look for columns named `url`/`affiliate_url` and `brand`/`affiliate brand name`/`merchant_name`.
+
+**URL Sanitization** (shared across both tabs):
+- Trim whitespace
+- Auto-prepend `https://` if no protocol present
+- Validate as HTTP/HTTPS URL
+- Batch limit: 1,000 links per operation
+
+**Brand Extraction & Sync**:
+- For CSV/XLSX: extract brand from `merchant_name`/`brand`/`affiliate brand name` column
+- For paste mode: extract domain name as brand (e.g., `amazon.com` → `Amazon`)
+- After import, batch-insert unique new brands into `custom_brands` (skip existing, case-insensitive dedup)
+- Invalidate `custom-brands` query so Quick-Add Payout sees them immediately
+
+**Toast**: `"Imported X links and updated your Brand list!"`
+
+## 2. Live Results Table
+
+**Added to: `src/components/dashboard/BrokenLinkScanner.tsx`**
+
+Below the existing stats bar, add a collapsible table showing all affiliate links with columns:
+- **Brand/Link**: merchant_name + truncated URL
+- **Status**: Badge with smart color logic
+- **Last Checked**: relative timestamp
+
+**Smart Status Logic**:
+- Green "Active" badge: HTTP 200
+- Red "Broken" badge: HTTP 404 or network failure (status 0)
+- Yellow "Warning" badge: HTTP 401/403 with tooltip "Site blocked automated ping; please verify manually."
+
+This uses the existing `useAffiliateLinks` hook to fetch all links.
+
+## 3. Warning Status Support
+
+**File: `src/hooks/useAffiliateLinks.ts`**
+- Add `"warning"` to the `AffiliateLink.status` type and `LinkStats` interface
+
+**File: `supabase/functions/scan-affiliate-links/index.ts`**
+- When HTTP 401/403 is returned, set status to `"warning"` instead of `"broken"`
+
+**Database**: No schema change needed — `status` is a `text` column, so `"warning"` works without migration.
+
+## 4. Integration Updates
+
+**File: `src/components/dashboard/BrokenLinkScanner.tsx`**
+- Replace `<BulkPasteImportDialog />` with `<UnifiedImportDialog />`
+- Add the live results table section
+
+**File: `src/components/dashboard/LinkVault.tsx`**
+- Replace `<BulkImportDialog />` with `<UnifiedImportDialog />`
+
+**File: `src/components/dashboard/BulkPasteImportDialog.tsx`** — remove (replaced)
+**File: `src/components/dashboard/BulkImportDialog.tsx`** — remove (replaced)
+
+## 5. Package Addition
+- Install `xlsx` package for Excel file parsing
+
+## Technical Details
+
+### Brand extraction from domain (paste mode)
+```typescript
+function extractBrandFromUrl(url: string): string | null {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, "");
+    const brand = hostname.split(".")[0];
+    return brand.charAt(0).toUpperCase() + brand.slice(1);
+  } catch { return null; }
+}
 ```
 
-### Import Dialog
-- Centered `Dialog` with a `Textarea` (min 8 rows) and placeholder: "Paste one URL per line…"
-- Submit button labeled "Import Links", disabled while empty or processing
-- State: `showBulkDialog`, `bulkUrls` (string), `bulkImporting` (boolean)
+### Brand sync logic
+```typescript
+// After import, collect unique brand names
+const newBrands = uniqueBrandNames.filter(
+  name => !existingBrands.has(name.toLowerCase())
+);
+if (newBrands.length > 0) {
+  await supabase.from("custom_brands").insert(
+    newBrands.map(name => ({ user_id: user.id, name }))
+  );
+  queryClient.invalidateQueries({ queryKey: ["custom-brands"] });
+}
+```
 
-### Processing Logic (on submit)
-1. Split textarea by newlines, trim whitespace, filter empty lines
-2. Validate each line is a valid HTTP/HTTPS URL — skip invalid ones
-3. Fetch existing `affiliate_links` URLs for the user, normalize for dedup (lowercase hostname, strip trailing slash)
-4. Filter out duplicates (against DB and within the batch)
-5. Insert valid, unique URLs into `affiliate_links` with `network: "other"`, `status: "active"`
-6. Invalidate `affiliate-links`, `link-stats`, `broken-links` queries so Active count updates immediately
-7. Show toast: `"Imported X links"` (or `"No new links to import"` if all were duplicates/invalid)
-8. Close dialog, reset state
-
-### No database or edge function changes needed
-The `affiliate_links` table already supports inserts with RLS. The existing `useAddAffiliateLink` pattern is followed but we do a direct batch insert for efficiency.
+### Protected system brands
+`BRAND_SUGGESTIONS` array (ShareASale, Impact, etc.) is hardcoded and never deleted — only custom brands can be removed. The sync logic skips brands that already exist (case-insensitive).
 
 ## Files Modified
 
-| File | Change |
+| File | Action |
 |---|---|
-| `src/components/dashboard/BrokenLinkScanner.tsx` | Add Bulk Import button, dialog with textarea, processing logic |
+| `src/components/dashboard/UnifiedImportDialog.tsx` | New — tabbed import with paste + file upload |
+| `src/components/dashboard/BrokenLinkScanner.tsx` | Swap import dialog, add live results table |
+| `src/components/dashboard/LinkVault.tsx` | Swap import dialog reference |
+| `src/hooks/useAffiliateLinks.ts` | Add warning status to types and stats |
+| `supabase/functions/scan-affiliate-links/index.ts` | Set warning status for 401/403 |
+| `src/components/dashboard/BulkPasteImportDialog.tsx` | Remove |
+| `src/components/dashboard/BulkImportDialog.tsx` | Remove |
+| `package.json` | Add `xlsx` dependency |
 
