@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Link2, Loader2, RefreshCw } from "lucide-react";
-import { BulkImportDialog } from "./BulkImportDialog";
+import { UnifiedImportDialog } from "./UnifiedImportDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -262,7 +262,7 @@ export function LinkVault() {
             Store and manage your affiliate links in one place. Track performance and detect broken links.
           </p>
         </div>
-        <BulkImportDialog />
+        <UnifiedImportDialog triggerVariant="glass" triggerLabel="Bulk Import" />
       </div>
 
       {/* Quick-Add Form */}
@@ -378,7 +378,7 @@ export function LinkVault() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <BulkImportDialog />
+                <UnifiedImportDialog triggerVariant="glass" triggerLabel="Bulk Import" />
                 <span className="text-xs text-muted-foreground">or add one manually above</span>
               </div>
             </div>

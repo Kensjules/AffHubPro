@@ -9,7 +9,7 @@ export interface AffiliateLink {
   url: string;
   merchant_name: string | null;
   network: "shareasale" | "awin" | "other";
-  status: "active" | "broken" | "recovered" | "ignored";
+  status: "active" | "broken" | "recovered" | "ignored" | "warning";
   last_checked_at: string | null;
   http_status_code: number | null;
   recovery_suggestion: string | null;
@@ -23,6 +23,7 @@ export interface LinkStats {
   broken: number;
   recovered: number;
   ignored: number;
+  warning: number;
 }
 
 export function useAffiliateLinks() {
@@ -83,7 +84,7 @@ export function useLinkStats() {
     queryKey: ["link-stats", user?.id],
     queryFn: async (): Promise<LinkStats> => {
       if (!user?.id) {
-        return { total: 0, active: 0, broken: 0, recovered: 0, ignored: 0 };
+        return { total: 0, active: 0, broken: 0, recovered: 0, ignored: 0, warning: 0 };
       }
 
       const { data, error } = await supabase
@@ -102,6 +103,7 @@ export function useLinkStats() {
         broken: data?.filter((l) => l.status === "broken").length || 0,
         recovered: data?.filter((l) => l.status === "recovered").length || 0,
         ignored: data?.filter((l) => l.status === "ignored").length || 0,
+        warning: data?.filter((l) => l.status === "warning").length || 0,
       };
 
       return stats;
