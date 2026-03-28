@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,27 +50,32 @@ export function QuickAddPayout() {
   const [category, setCategory] = useState("direct_brand");
   const [brandOpen, setBrandOpen] = useState(false);
 
-  // Fetch custom brands
+  // Fetch custom brands with IDs
   const { data: customBrands } = useQuery({
     queryKey: ["custom-brands"],
     queryFn: async () => {
       if (!user?.id) return [];
       const { data, error } = await supabase
         .from("custom_brands" as any)
-        .select("name")
+        .select("id, name")
         .eq("user_id", user.id)
         .order("name");
       if (error) throw error;
-      return ((data as any[]) || []).map((b: any) => b.name as string);
+      return ((data as any[]) || []).map((b: any) => ({ id: b.id as string, name: b.name as string }));
     },
     enabled: !!user?.id,
   });
+
+  // Set of custom brand names (lowercase) for identification
+  const customBrandNames = new Set(
+    (customBrands || []).map((b) => b.name.toLowerCase())
+  );
 
   // Merge and deduplicate brands (case-insensitive)
   const allBrands = (() => {
     const seen = new Set<string>();
     const result: string[] = [];
-    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || [])]) {
+    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || []).map((cb) => cb.name)]) {
       const key = b.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
@@ -98,7 +103,6 @@ export function QuickAddPayout() {
     if (!user?.id) return;
     const trimmed = name.trim().slice(0, 100);
     if (!trimmed) return;
-    // Case-insensitive check against known brands
     if (allBrands.some((b) => b.toLowerCase() === trimmed.toLowerCase())) return;
     await supabase.from("custom_brands" as any).insert({
       user_id: user.id,
@@ -119,6 +123,34 @@ export function QuickAddPayout() {
     setBrandOpen(false);
   };
 
+  const handleDeleteBrand = (id: string, name: string) => {
+    toast({
+      title: "Delete brand?",
+      description: `"${name}" will be permanently removed. This cannot be undone.`,
+      variant: "destructive",
+      action: (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={async () => {
+            await supabase.from("custom_brands" as any).delete().eq("id", id);
+            queryClient.invalidateQueries({ queryKey: ["custom-brands"] });
+            if (brandSource.toLowerCase() === name.toLowerCase()) {
+              setBrandSource("");
+            }
+            toast({ title: "Brand deleted", description: `"${name}" has been removed.` });
+          }}
+        >
+          Confirm
+        </Button>
+      ),
+    });
+  };
+
+  const getCustomBrandId = (name: string): string | undefined => {
+    return (customBrands || []).find((b) => b.name.toLowerCase() === name.toLowerCase())?.id;
+  };
+
   const handleSave = async () => {
     if (!user?.id || !amount || !brandSource) return;
 
@@ -135,7 +167,6 @@ export function QuickAddPayout() {
 
     setSaving(true);
 
-    // Auto-save brand if new
     await saveBrandIfNew(trimmedBrand);
 
     const { error } = await supabase.from("payouts" as any).insert({
@@ -205,6 +236,7 @@ export function QuickAddPayout() {
               <Label className="text-muted-foreground text-xs uppercase tracking-wider">
                 Brand / Source
               </Label>
+              <p className="text-muted-foreground/70 text-xs">Type to search or add a custom brand.</p>
               <Popover open={brandOpen} onOpenChange={setBrandOpen}>
                 <PopoverTrigger asChild>
                   <Button
@@ -224,18 +256,32 @@ export function QuickAddPayout() {
                     />
                     <CommandList>
                       <CommandGroup>
-                        {filteredBrands.map((brand) => (
-                          <CommandItem
-                            key={brand}
-                            value={brand}
-                            onSelect={(val) => {
-                              setBrandSource(val);
-                              setBrandOpen(false);
-                            }}
-                          >
-                            {brand}
-                          </CommandItem>
-                        ))}
+                        {filteredBrands.map((brand) => {
+                          const isCustom = customBrandNames.has(brand.toLowerCase());
+                          const brandId = isCustom ? getCustomBrandId(brand) : undefined;
+                          return (
+                            <CommandItem
+                              key={brand}
+                              value={brand}
+                              onSelect={(val) => {
+                                setBrandSource(val);
+                                setBrandOpen(false);
+                              }}
+                              className="flex items-center justify-between"
+                            >
+                              <span>{brand}</span>
+                              {isCustom && brandId && (
+                                <Trash2
+                                  className="w-3.5 h-3.5 text-destructive/60 hover:text-destructive cursor-pointer shrink-0 ml-2"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteBrand(brandId, brand);
+                                  }}
+                                />
+                              )}
+                            </CommandItem>
+                          );
+                        })}
                         {brandSource.trim().length > 0 && !exactMatch && (
                           <CommandItem
                             value={`__add__${brandSource.trim()}`}
