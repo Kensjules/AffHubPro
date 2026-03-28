@@ -57,7 +57,7 @@ export function AwinConnectDialog({
   };
 
   const handleTestConnection = async () => {
-    if (!publisherId.trim() || !apiToken.trim()) {
+    if (!onTestConnection || !publisherId.trim() || !apiToken.trim()) {
       setErrors({
         ...errors,
         ...(publisherId.trim() ? {} : { publisherId: "Required for testing" }),
