@@ -177,7 +177,7 @@ export function AwinConnectDialog({
               variant="outline"
               size="sm"
               onClick={handleTestConnection}
-              disabled={isTesting || isSaving || !publisherId.trim() || !apiToken.trim()}
+              disabled={isTesting || isSaving || !publisherId.trim() || !apiToken.trim() || !onTestConnection}
               className="w-full"
             >
               {isTesting ? (
