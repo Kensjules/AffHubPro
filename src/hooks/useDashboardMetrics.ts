@@ -64,17 +64,42 @@ export function useDashboardMetrics() {
 
       if (allTimeError) throw allTimeError;
 
+      // Fetch payouts (always count as paid revenue)
+      const { data: allPayouts } = await supabase
+        .from("payouts" as any)
+        .select("amount, brand_source")
+        .eq("user_id", user.id) as { data: Array<{ amount: number; brand_source: string }> | null };
+
+      const { data: currentPayouts } = await supabase
+        .from("payouts" as any)
+        .select("amount, brand_source")
+        .eq("user_id", user.id)
+        .gte("payout_date", thirtyDaysAgo.toISOString()) as { data: Array<{ amount: number; brand_source: string }> | null };
+
+      const { data: previousPayouts } = await supabase
+        .from("payouts" as any)
+        .select("amount, brand_source")
+        .eq("user_id", user.id)
+        .gte("payout_date", sixtyDaysAgo.toISOString())
+        .lt("payout_date", thirtyDaysAgo.toISOString()) as { data: Array<{ amount: number; brand_source: string }> | null };
+
       const current = calculateMetrics(currentData || []);
       const previous = calculateMetrics(previousData || []);
       const allTime = calculateMetrics(allTimeData || []);
 
+      const payoutTotal = (allPayouts || []).reduce((s, p) => s + Number(p.amount), 0);
+      const payoutCurrentTotal = (currentPayouts || []).reduce((s, p) => s + Number(p.amount), 0);
+      const payoutPreviousTotal = (previousPayouts || []).reduce((s, p) => s + Number(p.amount), 0);
+
+      const payoutBrands = new Set((allPayouts || []).map(p => p.brand_source));
+
       return {
-        totalRevenue: allTime.totalRevenue,
+        totalRevenue: allTime.totalRevenue + payoutTotal,
         pendingPayouts: allTime.pendingPayouts,
-        activeStores: allTime.activeStores,
-        revenueChange: calculateChange(current.totalRevenue, previous.totalRevenue),
+        activeStores: allTime.activeStores + payoutBrands.size,
+        revenueChange: calculateChange(current.totalRevenue + payoutCurrentTotal, previous.totalRevenue + payoutPreviousTotal),
         pendingChange: calculateChange(current.pendingPayouts, previous.pendingPayouts),
-        storesChange: calculateChange(current.activeStores, previous.activeStores),
+        storesChange: calculateChange(current.activeStores + new Set((currentPayouts || []).map(p => p.brand_source)).size, previous.activeStores + new Set((previousPayouts || []).map(p => p.brand_source)).size),
       };
     },
     enabled: !!user?.id,
@@ -100,6 +125,13 @@ export function useEarningsChart() {
 
       if (error) throw error;
 
+      // Fetch payouts for chart
+      const { data: payoutData } = await supabase
+        .from("payouts" as any)
+        .select("amount, payout_date")
+        .eq("user_id", user.id)
+        .gte("payout_date", thirtyDaysAgo.toISOString()) as { data: Array<{ amount: number; payout_date: string }> | null };
+
       // Group by date
       const groupedByDate: Record<string, number> = {};
       
@@ -109,10 +141,16 @@ export function useEarningsChart() {
         groupedByDate[date] = 0;
       }
 
-      // Sum amounts per date
+      // Sum transaction amounts per date
       (data || []).forEach((tx) => {
         const date = format(new Date(tx.transaction_date), "MMM d");
         groupedByDate[date] = (groupedByDate[date] || 0) + Number(tx.amount);
+      });
+
+      // Merge payout amounts per date
+      (payoutData || []).forEach((p) => {
+        const date = format(new Date(p.payout_date), "MMM d");
+        groupedByDate[date] = (groupedByDate[date] || 0) + Number(p.amount);
       });
 
       return Object.entries(groupedByDate).map(([date, earnings]) => ({
