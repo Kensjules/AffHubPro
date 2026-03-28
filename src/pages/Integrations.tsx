@@ -42,7 +42,7 @@ const AwinLogo = () => (
 export default function Integrations() {
   const [isAwinDialogOpen, setIsAwinDialogOpen] = useState(false);
   const [isCBDialogOpen, setIsCBDialogOpen] = useState(false);
-  const { integration, isLoading, isSaving, saveIntegration, syncNow } =
+  const { integration, isLoading, isSaving, saveIntegration, syncNow, testConnection: awinTestConnection } =
     useAwinIntegration();
   const {
     integration: cbIntegration,
@@ -355,6 +355,7 @@ export default function Integrations() {
         open={isAwinDialogOpen}
         onOpenChange={setIsAwinDialogOpen}
         onConnect={saveIntegration}
+        onTestConnection={awinTestConnection}
         isSaving={isSaving}
         defaultPublisherId={integration?.publisher_id ?? ""}
       />

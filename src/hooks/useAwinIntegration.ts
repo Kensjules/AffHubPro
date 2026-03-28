@@ -134,6 +134,26 @@ export function useAwinIntegration() {
     }
   };
 
+  const testConnection = async (publisherId: string, apiToken: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { data, error } = await supabase.functions.invoke(
+        "store-awin-credentials",
+        {
+          body: { publisherId, apiToken, testOnly: true },
+        }
+      );
+
+      if (error) throw error;
+      return {
+        success: data?.success ?? false,
+        message: data?.message || (data?.success ? "Connection successful!" : "Connection failed"),
+      };
+    } catch (error: any) {
+      console.error("Error testing Awin connection:", error);
+      return { success: false, message: error.message || "Connection test failed" };
+    }
+  };
+
   return {
     integration,
     isLoading,
@@ -141,5 +161,6 @@ export function useAwinIntegration() {
     saveIntegration,
     disconnectIntegration,
     syncNow,
+    testConnection,
   };
 }

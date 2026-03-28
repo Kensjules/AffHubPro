@@ -10,12 +10,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Eye, EyeOff, Loader2, ExternalLink } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Eye, EyeOff, Loader2, ExternalLink, CheckCircle2, XCircle } from "lucide-react";
 
 interface AwinConnectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConnect: (publisherId: string, apiToken: string) => Promise<boolean>;
+  onTestConnection?: (publisherId: string, apiToken: string) => Promise<{ success: boolean; message: string }>;
   isSaving: boolean;
   defaultPublisherId?: string;
 }
@@ -24,12 +26,15 @@ export function AwinConnectDialog({
   open,
   onOpenChange,
   onConnect,
+  onTestConnection,
   isSaving,
   defaultPublisherId = "",
 }: AwinConnectDialogProps) {
   const [publisherId, setPublisherId] = useState(defaultPublisherId);
   const [apiToken, setApiToken] = useState("");
   const [showToken, setShowToken] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [errors, setErrors] = useState<{ publisherId?: string; apiToken?: string }>({});
 
   const validateForm = () => {
@@ -51,6 +56,23 @@ export function AwinConnectDialog({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleTestConnection = async () => {
+    if (!onTestConnection || !publisherId.trim() || !apiToken.trim()) {
+      setErrors({
+        ...errors,
+        ...(publisherId.trim() ? {} : { publisherId: "Required for testing" }),
+        ...(apiToken.trim() ? {} : { apiToken: "Required for testing" }),
+      });
+      return;
+    }
+
+    setIsTesting(true);
+    setTestResult(null);
+    const result = await onTestConnection(publisherId.trim(), apiToken.trim());
+    setTestResult(result);
+    setIsTesting(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -59,6 +81,7 @@ export function AwinConnectDialog({
     const success = await onConnect(publisherId.trim(), apiToken.trim());
     if (success) {
       setApiToken("");
+      setTestResult(null);
       onOpenChange(false);
     }
   };
@@ -67,6 +90,7 @@ export function AwinConnectDialog({
     if (!isSaving) {
       setErrors({});
       setApiToken("");
+      setTestResult(null);
       onOpenChange(false);
     }
   };
@@ -84,7 +108,12 @@ export function AwinConnectDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+        {/* Help text block */}
+        <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg">
+          Connecting your Awin/ShareASale account automatically imports sales data for all your joined merchants (like ENERGYbits, Ketone IQ, etc.). You only need to provide your API Token once—we'll handle the individual store tracking for you!
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="publisher-id">Publisher ID</Label>
             <Input
@@ -95,6 +124,7 @@ export function AwinConnectDialog({
               onChange={(e) => {
                 setPublisherId(e.target.value);
                 if (errors.publisherId) setErrors({ ...errors, publisherId: undefined });
+                setTestResult(null);
               }}
               disabled={isSaving}
               className={errors.publisherId ? "border-destructive" : ""}
@@ -118,6 +148,7 @@ export function AwinConnectDialog({
                 onChange={(e) => {
                   setApiToken(e.target.value);
                   if (errors.apiToken) setErrors({ ...errors, apiToken: undefined });
+                  setTestResult(null);
                 }}
                 disabled={isSaving}
                 className={`pr-10 ${errors.apiToken ? "border-destructive" : ""}`}
@@ -137,6 +168,45 @@ export function AwinConnectDialog({
             <p className="text-xs text-muted-foreground">
               Generate a token in Awin &gt; Tools &gt; API Credentials
             </p>
+          </div>
+
+          {/* Test Connection */}
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleTestConnection}
+              disabled={isTesting || isSaving || !publisherId.trim() || !apiToken.trim() || !onTestConnection}
+              className="w-full"
+            >
+              {isTesting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Testing...
+                </>
+              ) : (
+                "Test Connection"
+              )}
+            </Button>
+
+            {testResult && (
+              <Badge
+                variant="outline"
+                className={
+                  testResult.success
+                    ? "bg-accent/20 text-accent border-accent/30 w-full justify-center py-1.5"
+                    : "bg-destructive/10 text-destructive border-destructive/30 w-full justify-center py-1.5"
+                }
+              >
+                {testResult.success ? (
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                ) : (
+                  <XCircle className="h-3 w-3 mr-1" />
+                )}
+                {testResult.message}
+              </Badge>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">

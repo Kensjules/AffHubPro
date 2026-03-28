@@ -209,7 +209,7 @@ export function ClickBankConnectDialog({
               <Input
                 id="cb-dev-key"
                 type={showDevKey ? "text" : "password"}
-                placeholder="Enter your Developer API key"
+                placeholder="Captain Key (DEV-123456789012345678901234567890123456)"
                 value={devApiKey}
                 onChange={(e) => {
                   setDevApiKey(e.target.value);
