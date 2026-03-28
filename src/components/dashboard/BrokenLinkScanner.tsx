@@ -181,12 +181,20 @@ export function BrokenLinkScanner() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button variant="hero" size="sm" onClick={() => scanLinks()} disabled={scanning}>
-            <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
-            {scanning ? "Scanning..." : "Scan Now"}
+          <Button variant="hero" size="sm" onClick={handleScan} disabled={isAnimating || scanning}>
+            <RefreshCw className={`w-4 h-4 ${isAnimating || scanning ? "animate-spin" : ""}`} />
+            {isAnimating ? "Scanning..." : "Scan Now"}
           </Button>
         </div>
       </div>
+
+      {/* Progress Bar */}
+      {isAnimating && (
+        <div className="space-y-1">
+          <Progress value={scanProgress} className="h-2" />
+          <p className="text-xs text-muted-foreground text-center">Scanning affiliate links…</p>
+        </div>
+      )}
 
       {/* Stats */}
       {isLoading ? (
