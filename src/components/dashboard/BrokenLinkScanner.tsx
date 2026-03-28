@@ -182,6 +182,7 @@ export function BrokenLinkScanner() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <BulkPasteImportDialog />
           <Button variant="hero" size="sm" onClick={handleScan} disabled={isAnimating || scanning}>
             <RefreshCw className={`w-4 h-4 ${isAnimating || scanning ? "animate-spin" : ""}`} />
             {isAnimating ? "Scanning..." : "Scan Now"}
