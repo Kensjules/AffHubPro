@@ -248,7 +248,6 @@ export default function Integrations() {
             </div>
           </div>
         </div>
-        </div>
       </main>
 
       {/* Connection Dialog */}
