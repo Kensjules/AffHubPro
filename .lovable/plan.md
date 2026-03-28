@@ -1,32 +1,41 @@
 
 
-# Link Health Monitor — 3-Second Progress Bar Enhancement
+# Enhance "Add as New Brand" Button in Quick-Add Payout
 
 ## Overview
-The Link Health Monitor already works end-to-end: the "Scan Now" button calls the `scan-affiliate-links` edge function, which performs HEAD requests and updates statuses. The active/broken counts are already dynamic from the database. The missing piece is a **3-second animated progress bar** during scanning to give a premium feel.
+Restyle the "Add as new brand" CommandItem from a subtle list item into a visually prominent gold button, and ensure it auto-selects the brand after saving.
 
-## Changes
+## Change — Single file: `src/components/dashboard/QuickAddPayout.tsx`
 
-### `src/components/dashboard/BrokenLinkScanner.tsx`
+### Visual (lines 239-248)
+Replace the current `CommandItem` with a styled version using the brand gold color:
 
-1. **Add progress bar state** — Track `scanProgress` (0-100) and `isAnimating` boolean.
-2. **On "Scan Now" click**:
-   - Set `isAnimating = true`, start a 3-second interval that increments `scanProgress` from 0 to ~95 over 3 seconds (e.g., tick every 100ms, increment by ~3.3).
-   - Fire `scanLinks()` mutation simultaneously.
-   - When the mutation completes (success or error), jump progress to 100, wait 300ms, then hide the bar.
-3. **Render a `<Progress />` component** (already exists in `src/components/ui/progress.tsx`) between the stats row and the broken links list, visible only when `isAnimating` is true.
-4. **Disable "Scan Now" button** while `isAnimating` is true (not just while `scanning`).
-5. **Show scan result summary** — After scan completes, display a brief toast with "X links scanned, Y broken found" (already done via `useScanLinks` `onSuccess`).
+```tsx
+{brandSource.trim().length > 0 && !exactMatch && (
+  <CommandItem
+    value={`__add__${brandSource.trim()}`}
+    onSelect={handleAddNewBrand}
+    className="mx-2 my-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-semibold hover:bg-primary/25 transition-colors"
+  >
+    <Plus className="w-4 h-4 mr-2" />
+    Add &ldquo;{brandSource.trim().slice(0, 100)}&rdquo; as a new brand
+  </CommandItem>
+)}
+```
 
-### No database or edge function changes needed
-- The `affiliate_links` table already has `status`, `last_checked_at`, `http_status_code` fields.
-- The edge function already performs HEAD requests with 10s timeout and updates statuses.
-- The `useLinkStats` hook already counts active/broken/ignored from the database dynamically.
-- The `useBrokenLinks` hook already fetches broken links for display.
+This uses `bg-primary/15` with `border-primary/30` and `text-primary` — the gold color from the design system (`--primary: 45 93% 47%`). This gives it a distinct "button-like" appearance with gold tint, border, and bold text while remaining inside the Command list.
+
+### Functional — `handleAddNewBrand` already works correctly
+The existing `handleAddNewBrand` (lines 104-112) already:
+1. Inserts into `custom_brands` table
+2. Sets `setBrandSource(trimmed)` — auto-selects the brand
+3. Closes the popover via `setBrandOpen(false)`
+
+No functional changes needed — it already auto-selects and closes. The popover (not the Sheet drawer) closes, returning focus to the payout form with the brand pre-filled. This is the correct UX — the Sheet should stay open so the user can complete and save the payout.
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/dashboard/BrokenLinkScanner.tsx` | Add progress bar animation during scan, import `Progress` component |
+| `src/components/dashboard/QuickAddPayout.tsx` | Restyle "Add as new brand" CommandItem with gold background, border, bold text |
 
