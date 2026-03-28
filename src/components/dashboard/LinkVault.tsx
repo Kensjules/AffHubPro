@@ -21,7 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, Search, Link2, Loader2, RefreshCw } from "lucide-react";
-import { BulkImportDialog } from "./BulkImportDialog";
+import { UnifiedImportDialog } from "./UnifiedImportDialog";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";

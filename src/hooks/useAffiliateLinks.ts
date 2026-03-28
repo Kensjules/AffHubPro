@@ -23,6 +23,7 @@ export interface LinkStats {
   broken: number;
   recovered: number;
   ignored: number;
+  warning: number;
 }
 
 export function useAffiliateLinks() {
