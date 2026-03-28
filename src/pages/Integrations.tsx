@@ -197,25 +197,113 @@ export default function Integrations() {
             )}
           </div>
 
-          {/* ClickBank — Coming Soon */}
-          <div className="glass rounded-xl p-6 space-y-4 opacity-80">
+          {/* ClickBank Card */}
+          <div
+            className={`glass rounded-xl p-6 space-y-4 transition-all duration-200 ${
+              !cbIsConnected ? "cursor-pointer hover:border-primary/50 hover:shadow-lg" : ""
+            }`}
+            onClick={() => {
+              if (!cbIsConnected && !cbIsLoading) {
+                setIsCBDialogOpen(true);
+              }
+            }}
+          >
             <div className="flex items-start justify-between">
               <div className="p-2 rounded-lg bg-card/50">
                 <span className="text-lg font-bold" style={{ color: "#2ECC71" }}>ClickBank</span>
               </div>
-              <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
-                Coming Soon
-              </Badge>
+              {cbIsLoading ? (
+                <Badge variant="outline" className="text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  Loading
+                </Badge>
+              ) : cbIsConnected ? (
+                <Badge variant="outline" className="bg-accent/20 text-accent border-accent/30 hover:bg-accent/20">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Connected
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Not Connected
+                </Badge>
+              )}
             </div>
+
             <div>
               <h3 className="text-lg font-semibold text-foreground">ClickBank</h3>
-              <p className="text-sm text-muted-foreground mt-1">Digital marketplace leader for health and fitness. Direct API integration coming soon.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Digital marketplace leader for health and fitness. Sync your sales and commissions.
+              </p>
             </div>
-            <div className="pt-2 border-t border-border/30">
-              <Button variant="outline" size="sm" onClick={() => toast.success("We'll notify you when ClickBank is available!")}>
-                <Bell className="h-4 w-4 mr-1" /> Notify Me
-              </Button>
-            </div>
+
+            {cbIsConnected && cbIntegration && (
+              <div className="space-y-3 pt-2 border-t border-border/30">
+                {cbIntegration.nickname && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Account</span>
+                    <span className="font-mono text-foreground">{cbIntegration.nickname}</span>
+                  </div>
+                )}
+
+                {cbIntegration.last_sync_at && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Last Synced</span>
+                    <span className="text-foreground">
+                      {format(new Date(cbIntegration.last_sync_at), "MMM d, h:mm a")}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCBDialogOpen(true);
+                    }}
+                  >
+                    <Settings2 className="h-4 w-4 mr-1" />
+                    Settings
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cbSyncNow();
+                    }}
+                    disabled={cbIsSaving}
+                  >
+                    {cbIsSaving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    ) : (
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                    )}
+                    Sync Now
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!cbIsConnected && !cbIsLoading && (
+              <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                <span className="text-sm font-medium text-primary">Click to connect</span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button className="text-muted-foreground hover:text-foreground transition-colors">
+                      <Info className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-[220px]">
+                    <p className="text-xs">
+                      Connect your ClickBank account to automatically sync sales and commission data.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
           </div>
 
           {/* Impact — Coming Soon */}
