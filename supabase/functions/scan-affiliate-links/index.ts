@@ -94,6 +94,8 @@ Deno.serve(async (req) => {
         let httpStatus = 0;
         let isBroken = false;
 
+        let isWarning = false;
+
         try {
           const response = await fetch(link.url, {
             method: "HEAD",
@@ -103,6 +105,7 @@ Deno.serve(async (req) => {
           clearTimeout(timeoutId);
           httpStatus = response.status;
           isBroken = httpStatus === 404 || httpStatus === 410;
+          isWarning = httpStatus === 401 || httpStatus === 403;
         } catch (fetchErr) {
           clearTimeout(timeoutId);
           // Network error or timeout - mark as potentially broken
