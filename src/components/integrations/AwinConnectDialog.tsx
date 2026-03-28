@@ -17,7 +17,7 @@ interface AwinConnectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConnect: (publisherId: string, apiToken: string) => Promise<boolean>;
-  onTestConnection: (publisherId: string, apiToken: string) => Promise<{ success: boolean; message: string }>;
+  onTestConnection?: (publisherId: string, apiToken: string) => Promise<{ success: boolean; message: string }>;
   isSaving: boolean;
   defaultPublisherId?: string;
 }
