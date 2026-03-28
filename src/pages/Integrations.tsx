@@ -355,6 +355,7 @@ export default function Integrations() {
         open={isAwinDialogOpen}
         onOpenChange={setIsAwinDialogOpen}
         onConnect={saveIntegration}
+        onTestConnection={awinTestConnection}
         isSaving={isSaving}
         defaultPublisherId={integration?.publisher_id ?? ""}
       />

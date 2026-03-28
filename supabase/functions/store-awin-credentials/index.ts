@@ -16,13 +16,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Use service role key for server-side credential storage
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Validate user from their token
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -41,7 +39,7 @@ Deno.serve(async (req) => {
 
     const userId = claimsData.claims.sub;
 
-    const { publisherId, apiToken } = await req.json();
+    const { publisherId, apiToken, testOnly } = await req.json();
 
     // Validate input
     if (!publisherId || !apiToken) {
@@ -62,6 +60,42 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Test-only mode: validate credentials against Awin API
+    if (testOnly) {
+      try {
+        const testUrl = `https://api.awin.com/publishers/${encodeURIComponent(publisherId.trim())}/accounts`;
+        const testResponse = await fetch(testUrl, {
+          headers: {
+            "Authorization": `Bearer ${apiToken.trim()}`,
+            "Accept": "application/json",
+          },
+        });
+
+        if (testResponse.ok) {
+          return new Response(
+            JSON.stringify({ success: true, message: "Connection successful! Credentials are valid." }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else if (testResponse.status === 401 || testResponse.status === 403) {
+          return new Response(
+            JSON.stringify({ success: false, message: "Invalid credentials. Check your Publisher ID and API Token." }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          return new Response(
+            JSON.stringify({ success: false, message: `Awin API returned status ${testResponse.status}` }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch (fetchErr) {
+        console.error("Awin test connection error");
+        return new Response(
+          JSON.stringify({ success: false, message: "Could not reach Awin API. Try again later." }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     // Check if integration already exists
     const { data: existing } = await supabaseAdmin
       .from("user_integrations")
@@ -74,7 +108,6 @@ Deno.serve(async (req) => {
     let error;
 
     if (existing) {
-      // Update existing integration
       const result = await supabaseAdmin
         .from("user_integrations")
         .update({
@@ -90,7 +123,6 @@ Deno.serve(async (req) => {
       data = result.data;
       error = result.error;
     } else {
-      // Insert new integration
       const result = await supabaseAdmin
         .from("user_integrations")
         .insert({
