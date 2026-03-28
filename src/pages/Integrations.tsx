@@ -40,11 +40,21 @@ const AwinLogo = () => (
 );
 
 export default function Integrations() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAwinDialogOpen, setIsAwinDialogOpen] = useState(false);
+  const [isCBDialogOpen, setIsCBDialogOpen] = useState(false);
   const { integration, isLoading, isSaving, saveIntegration, syncNow } =
     useAwinIntegration();
+  const {
+    integration: cbIntegration,
+    isLoading: cbIsLoading,
+    isSaving: cbIsSaving,
+    saveIntegration: cbSaveIntegration,
+    testConnection: cbTestConnection,
+    syncNow: cbSyncNow,
+  } = useClickBankIntegration();
 
   const isConnected = integration?.is_connected ?? false;
+  const cbIsConnected = cbIntegration?.is_connected ?? false;
 
   const handleSyncNow = async () => {
     await syncNow();
