@@ -1,42 +1,64 @@
 
 
-# Universal Affiliate Tracking — Copy Overhaul
+# Quick-Add Payout Feature
 
-## Files Modified
+## Overview
+Add a "+ Add Payout" button to the dashboard header that opens a Sheet (side drawer) for manually logging payouts. On save, insert into a new `payouts` table, show a success toast, and invalidate dashboard queries so cards/chart update instantly.
 
-| File | Changes |
+## Database
+
+### New `payouts` table (migration)
+```sql
+CREATE TABLE public.payouts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  amount numeric NOT NULL,
+  brand_source text NOT NULL,
+  category text NOT NULL DEFAULT 'direct_brand',  -- 'direct_brand' | 'network'
+  payout_date timestamp with time zone NOT NULL DEFAULT now(),
+  created_at timestamp with time zone NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.payouts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own payouts" ON public.payouts FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own payouts" ON public.payouts FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can delete own payouts" ON public.payouts FOR DELETE TO authenticated USING (auth.uid() = user_id);
+```
+
+This avoids the `shareasale_account_id` FK constraint on `transactions_cache`.
+
+## Frontend Changes
+
+### 1. `src/components/dashboard/QuickAddPayout.tsx` (new)
+- Sheet component (slides from right, glass styling, dark theme)
+- Three fields:
+  - **Amount**: Large `$` prefixed input, `type="number"`, step 0.01, autofocus, required
+  - **Brand/Source**: Combobox (Popover + Command) with searchable suggestions: Energybits, Ketone IQ, ShareASale, Impact, etc. Also accepts free-text
+  - **Category**: Toggle group with two options — "Direct Brand" / "Network" — styled as pill buttons
+- **Save** button: `variant="hero"`, full-width at bottom
+- On save:
+  1. Insert into `payouts` table via Supabase client
+  2. Show success toast with amount + brand
+  3. Close drawer
+  4. Invalidate `dashboard-metrics` and `earnings-chart` query keys
+
+### 2. `src/hooks/useDashboardMetrics.ts` (update)
+- In `useDashboardMetrics`, also fetch from `payouts` table and merge totals into `totalRevenue`
+- In `useEarningsChart`, also fetch from `payouts` (using `payout_date`) and merge into daily earnings
+- Payouts always count as "paid" revenue (no pending status)
+
+### 3. `src/pages/Dashboard.tsx` (update)
+- Import `QuickAddPayout`
+- Add `<QuickAddPayout />` in the header area next to the "Sync Now" button
+- The component self-manages its open/close state
+
+## Files
+
+| File | Action |
 |---|---|
-| `src/components/landing/HeroSection.tsx` | Hero subtitle, badge text, social proof chips |
-| `src/components/landing/FeaturesSection.tsx` | Last feature card (network-specific → universal), section subtitle |
-| `src/components/landing/HowItWorksSection.tsx` | Step 02 title & description (ShareASale-specific → universal) |
-| `src/components/landing/CTASection.tsx` | Subtitle copy |
-| `src/components/landing/Footer.tsx` | Disclaimer text, brand name fix (AffHubHQ → AffHubPro) |
-
-## Exact Copy Changes
-
-### HeroSection.tsx
-- **Badge** (line 22): `"Enterprise-Grade Affiliate Management"` → `"Your Universal Affiliate Dashboard"`
-- **Subtitle** (line 40): `"Track your ShareASale & Awin performance with crystal-clear analytics. See your earnings, clicks, and best products in one beautiful dashboard."` → `"One dashboard for all your affiliate partnerships — networks, direct brands, and individual links. See every earning, click, and conversion in one place."`
-- **Social proof chips** (lines 59-61):
-  - `"✓ ShareASale/Awin Integration Live"` → `"✓ Works With Any Affiliate Source"`
-  - `"✓ Real-Time Data Sync"` → `"✓ Universal CSV Import"`
-  - `"✓ Built for Affiliate Marketers"` → `"✓ Networks, Brands & Direct Links"`
-
-### FeaturesSection.tsx
-- **Section subtitle** (line 47): `"Powerful features designed specifically for affiliate marketers who want clarity without complexity."` → `"Powerful features for affiliate marketers who need one source of truth — no matter where revenue comes from."`
-- **Last feature card** (lines 30-33):
-  - Title: `"ShareASale & Awin Specialist"` → `"Universal Data Import"`
-  - Description: `"Deep integration with ShareASale (part of the Awin Group) is live now. More networks coming in V2 based on user demand."` → `"Import data from ShareASale, Impact, direct brand partnerships, or any affiliate source via CSV. One format, every revenue stream."`
-
-### HowItWorksSection.tsx
-- **Step 02** (lines 11-14):
-  - Title: `"Connect ShareASale"` → `"Import Your Data"`
-  - Description: `"Enter your ShareASale API credentials. We'll validate them instantly and start syncing."` → `"Connect a network via API or import any affiliate data with CSV. We support ShareASale, Awin, Impact, and direct brand exports."`
-
-### CTASection.tsx
-- **Subtitle** (line 24): `"Join thousands of affiliate marketers who've simplified their analytics with AffHubPro."` → `"Consolidate every affiliate partnership — networks, brands, and direct links — into one clear view."`
-
-### Footer.tsx
-- **Brand name** (line 13): `Aff<span>Hub</span>HQ` → `Aff<span>Hub</span>Pro` (consistency fix)
-- **Disclaimer** (line 31): `"AffHubPro is an independent tool and is not officially affiliated with ShareASale or Awin."` → `"AffHubPro is an independent analytics platform. Not affiliated with any affiliate network."`
+| Migration | Create `payouts` table with RLS |
+| `src/components/dashboard/QuickAddPayout.tsx` | New — Sheet with form |
+| `src/hooks/useDashboardMetrics.ts` | Merge payouts into metrics + chart |
+| `src/pages/Dashboard.tsx` | Add QuickAddPayout to header |
 
