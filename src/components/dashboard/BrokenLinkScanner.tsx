@@ -8,7 +8,8 @@ import {
   ExternalLink,
   Replace,
   EyeOff,
-  Plus
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import {
   useReplaceLink,
   useIgnoreLink,
   useAddAffiliateLink,
+  useDeleteLink,
+  useClearBrokenLinks,
   type AffiliateLink,
 } from "@/hooks/useAffiliateLinks";
 import { formatDistanceToNow } from "date-fns";
@@ -58,6 +61,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export function BrokenLinkScanner() {
   const { data: brokenLinks, isLoading: linksLoading } = useBrokenLinks();
@@ -67,6 +82,8 @@ export function BrokenLinkScanner() {
   const { mutate: replaceLink, isPending: replacing } = useReplaceLink();
   const { mutate: ignoreLink, isPending: ignoring } = useIgnoreLink();
   const { mutate: addLink, isPending: adding } = useAddAffiliateLink();
+  const { mutate: deleteLink } = useDeleteLink();
+  const { mutate: clearBrokenLinks, isPending: clearing } = useClearBrokenLinks();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newUrl, setNewUrl] = useState("");
@@ -200,6 +217,33 @@ export function BrokenLinkScanner() {
             </DialogContent>
           </Dialog>
           <UnifiedImportDialog triggerLabel="Import Links" />
+          {(stats?.broken || 0) > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled={clearing}>
+                  <Trash2 className="w-4 h-4" />
+                  {clearing ? "Clearing..." : "Clear Broken Links"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear all broken links?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete {stats?.broken || 0} broken link{(stats?.broken || 0) !== 1 ? "s" : ""}. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => clearBrokenLinks()}
+                  >
+                    Delete All Broken
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button variant="hero" size="sm" onClick={handleScan} disabled={isAnimating || scanning}>
             <RefreshCw className={`w-4 h-4 ${isAnimating || scanning ? "animate-spin" : ""}`} />
             {isAnimating ? "Scanning..." : "Scan Now"}
@@ -268,13 +312,14 @@ export function BrokenLinkScanner() {
                   <TableRow className="border-border/50 hover:bg-transparent">
                     <TableHead className="text-muted-foreground">Brand / Link</TableHead>
                     <TableHead className="text-muted-foreground">Status</TableHead>
-                    <TableHead className="text-muted-foreground">Last Checked</TableHead>
-                  </TableRow>
+                     <TableHead className="text-muted-foreground">Last Checked</TableHead>
+                     <TableHead className="text-muted-foreground w-[60px]">Actions</TableHead>
+                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allLinks.slice(0, 50).map((link) => (
-                    <LiveTableRow key={link.id} link={link} truncateUrl={truncateUrl} />
-                  ))}
+                   {allLinks.slice(0, 50).map((link) => (
+                     <LiveTableRow key={link.id} link={link} truncateUrl={truncateUrl} onDelete={deleteLink} />
+                   ))}
                 </TableBody>
               </Table>
             </div>
@@ -350,10 +395,24 @@ function getStatusBadge(status: string) {
   }
 }
 
-function LiveTableRow({ link, truncateUrl }: { link: import("@/hooks/useAffiliateLinks").AffiliateLink; truncateUrl: (url: string, max?: number) => string }) {
+function LiveTableRow({ link, truncateUrl, onDelete }: { 
+  link: import("@/hooks/useAffiliateLinks").AffiliateLink; 
+  truncateUrl: (url: string, max?: number) => string;
+  onDelete: (linkId: string) => void;
+}) {
   const lastChecked = link.last_checked_at
     ? formatDistanceToNow(new Date(link.last_checked_at), { addSuffix: true })
     : "Never";
+
+  const handleDelete = () => {
+    toast("Delete this link?", {
+      description: truncateUrl(link.url, 50),
+      action: {
+        label: "Delete",
+        onClick: () => onDelete(link.id),
+      },
+    });
+  };
 
   return (
     <TableRow className="border-border/50 hover:bg-muted/40 transition-colors">
@@ -365,6 +424,11 @@ function LiveTableRow({ link, truncateUrl }: { link: import("@/hooks/useAffiliat
       </TableCell>
       <TableCell>{getStatusBadge(link.status)}</TableCell>
       <TableCell className="text-xs text-muted-foreground">{lastChecked}</TableCell>
+      <TableCell>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </TableCell>
     </TableRow>
   );
 }
