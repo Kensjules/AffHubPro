@@ -395,10 +395,24 @@ function getStatusBadge(status: string) {
   }
 }
 
-function LiveTableRow({ link, truncateUrl }: { link: import("@/hooks/useAffiliateLinks").AffiliateLink; truncateUrl: (url: string, max?: number) => string }) {
+function LiveTableRow({ link, truncateUrl, onDelete }: { 
+  link: import("@/hooks/useAffiliateLinks").AffiliateLink; 
+  truncateUrl: (url: string, max?: number) => string;
+  onDelete: (linkId: string) => void;
+}) {
   const lastChecked = link.last_checked_at
     ? formatDistanceToNow(new Date(link.last_checked_at), { addSuffix: true })
     : "Never";
+
+  const handleDelete = () => {
+    toast("Delete this link?", {
+      description: truncateUrl(link.url, 50),
+      action: {
+        label: "Delete",
+        onClick: () => onDelete(link.id),
+      },
+    });
+  };
 
   return (
     <TableRow className="border-border/50 hover:bg-muted/40 transition-colors">
@@ -410,6 +424,11 @@ function LiveTableRow({ link, truncateUrl }: { link: import("@/hooks/useAffiliat
       </TableCell>
       <TableCell>{getStatusBadge(link.status)}</TableCell>
       <TableCell className="text-xs text-muted-foreground">{lastChecked}</TableCell>
+      <TableCell>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={handleDelete}>
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </TableCell>
     </TableRow>
   );
 }
