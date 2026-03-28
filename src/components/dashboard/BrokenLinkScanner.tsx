@@ -61,6 +61,7 @@ import {
 
 export function BrokenLinkScanner() {
   const { data: brokenLinks, isLoading: linksLoading } = useBrokenLinks();
+  const { data: allLinks, isLoading: allLinksLoading } = useAffiliateLinks();
   const { data: stats, isLoading: statsLoading } = useLinkStats();
   const { mutate: scanLinks, isPending: scanning } = useScanLinks();
   const { mutate: replaceLink, isPending: replacing } = useReplaceLink();
