@@ -262,7 +262,7 @@ export function LinkVault() {
             Store and manage your affiliate links in one place. Track performance and detect broken links.
           </p>
         </div>
-        <BulkImportDialog />
+        <UnifiedImportDialog triggerVariant="glass" triggerLabel="Bulk Import" />
       </div>
 
       {/* Quick-Add Form */}
