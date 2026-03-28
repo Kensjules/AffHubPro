@@ -97,9 +97,9 @@ export function useDashboardMetrics() {
         totalRevenue: allTime.totalRevenue + payoutTotal,
         pendingPayouts: allTime.pendingPayouts,
         activeStores: allTime.activeStores + payoutBrands.size,
-        revenueChange: calculateChange(current.totalRevenue, previous.totalRevenue),
+        revenueChange: calculateChange(current.totalRevenue + payoutCurrentTotal, previous.totalRevenue + payoutPreviousTotal),
         pendingChange: calculateChange(current.pendingPayouts, previous.pendingPayouts),
-        storesChange: calculateChange(current.activeStores, previous.activeStores),
+        storesChange: calculateChange(current.activeStores + new Set((currentPayouts || []).map(p => p.brand_source)).size, previous.activeStores + new Set((previousPayouts || []).map(p => p.brand_source)).size),
       };
     },
     enabled: !!user?.id,
