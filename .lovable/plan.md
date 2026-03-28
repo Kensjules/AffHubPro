@@ -1,53 +1,44 @@
 
 
-# Revenue Chart Tooltip Fix & Cleanup
+# Add Placeholder Integration Cards
 
 ## Overview
-Three items: (1) fix the chart tooltip to only activate on data point hover with no crosshair, (2) GitHub sync is automatic via Lovable's integration, (3) landing page verification requires publishing.
+Add three "Coming Soon" integration cards (ClickBank, Impact, Amazon Associates) to the Integrations page grid. Each card uses the same `glass rounded-xl` styling as the Awin card, with a "Coming Soon" badge and a "Notify Me" button that triggers a toast.
 
-## 1. Chart Tooltip Fix — `src/components/dashboard/RevenueChart.tsx`
+## Changes — Single file: `src/pages/Integrations.tsx`
 
-Add props to the `<ChartTooltip>` component to restrict tooltip behavior:
+### Add import
+- Add `Bell` from lucide-react (for Notify Me button icon)
+- Add `toast` from `sonner`
 
-```tsx
-<ChartTooltip 
-  cursor={false}
-  isAnimationActive={false}
-  content={
-    <ChartTooltipContent 
-      formatter={(value) => [`$${Number(value).toFixed(2)}`, "Revenue"]}
-    />
-  }
-/>
+### Add placeholder cards after the Awin card (after line 185, inside the grid div)
+
+Three cards, each with this structure:
+```
+glass rounded-xl p-6 space-y-4 opacity-80
 ```
 
-Also add `activeDot` to the `<Area>` and disable default dot hover behavior:
+Each card contains:
+1. **Header**: Brand name text (styled like AwinLogo area) + "Coming Soon" badge (`variant="outline"` with amber/yellow styling)
+2. **Title & Description**: Network name as `<h3>`, provided label as `<p>`
+3. **Footer**: "Notify Me" button (`variant="outline"`, `size="sm"`) with `Bell` icon — on click calls `toast.success("We'll notify you when [Network] is available!")`
 
-```tsx
-<Area
-  type="monotone"
-  dataKey="earnings"
-  stroke="hsl(var(--primary))"
-  strokeWidth={2}
-  fill="url(#revenueGradient)"
-  activeDot={{ r: 5, strokeWidth: 2 }}
-  dot={false}
-/>
-```
+Card data:
+| Network | Label |
+|---|---|
+| ClickBank | Popular for health, fitness, and digital products |
+| Impact | Connect with brands like Nike, Adidas, and more |
+| Amazon Associates | Track your Amazon referral commissions |
 
-- `cursor={false}` removes the vertical crosshair line
-- `activeDot` makes the tooltip snap to data points with a visible dot indicator
-- Recharts' `Tooltip` with `cursor={false}` still activates on nearest-point proximity, which is the desired "snap to data point" behavior
-
-## 2. GitHub Sync
-Lovable automatically pushes all changes to the connected GitHub repository. No manual bundling is needed — all recent changes (avatar upload, initials logic, safety guards, link monitor, landing page copy) are already committed. If not connected, the user can connect via Project Settings → GitHub.
-
-## 3. Landing Page Verification
-The landing page copy update for "Automated Link Protection" is in the codebase (`FeaturesSection.tsx`). To make it live at `trans-a-lyze.lovable.app`, the user needs to click **Publish → Update** in the editor. The preview URL already reflects the changes.
+### Brand text styling
+Since there are no official SVG logos to use, render each network name as bold text in the logo area (`p-2 rounded-lg bg-card/50` container, matching Awin logo placement) with a distinct brand color per network:
+- ClickBank: `#2ECC71` (green)
+- Impact: `#6366F1` (indigo)
+- Amazon Associates: `#FF9900` (orange)
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/dashboard/RevenueChart.tsx` | Add `cursor={false}` to tooltip, `activeDot`/`dot={false}` to Area |
+| `src/pages/Integrations.tsx` | Add 3 Coming Soon placeholder cards with Notify Me toast |
 
