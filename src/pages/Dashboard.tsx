@@ -19,6 +19,7 @@ import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { RecentTransactionsTable } from "@/components/dashboard/RecentTransactionsTable";
 import { BrokenLinkScanner } from "@/components/dashboard/BrokenLinkScanner";
+import { QuickAddPayout } from "@/components/dashboard/QuickAddPayout";
 
 export default function Dashboard() {
   const navigate = useNavigate();
