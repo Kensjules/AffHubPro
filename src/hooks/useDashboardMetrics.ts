@@ -125,6 +125,13 @@ export function useEarningsChart() {
 
       if (error) throw error;
 
+      // Fetch payouts for chart
+      const { data: payoutData } = await supabase
+        .from("payouts" as any)
+        .select("amount, payout_date")
+        .eq("user_id", user.id)
+        .gte("payout_date", thirtyDaysAgo.toISOString()) as { data: Array<{ amount: number; payout_date: string }> | null };
+
       // Group by date
       const groupedByDate: Record<string, number> = {};
       
@@ -134,10 +141,16 @@ export function useEarningsChart() {
         groupedByDate[date] = 0;
       }
 
-      // Sum amounts per date
+      // Sum transaction amounts per date
       (data || []).forEach((tx) => {
         const date = format(new Date(tx.transaction_date), "MMM d");
         groupedByDate[date] = (groupedByDate[date] || 0) + Number(tx.amount);
+      });
+
+      // Merge payout amounts per date
+      (payoutData || []).forEach((p) => {
+        const date = format(new Date(p.payout_date), "MMM d");
+        groupedByDate[date] = (groupedByDate[date] || 0) + Number(p.amount);
       });
 
       return Object.entries(groupedByDate).map(([date, earnings]) => ({

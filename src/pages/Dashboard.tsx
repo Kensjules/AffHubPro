@@ -89,6 +89,7 @@ export default function Dashboard() {
               <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
               <span className="text-sm text-muted-foreground">Last sync: {lastSyncText}</span>
             </div>
+            <QuickAddPayout />
             <Button 
               variant="hero" 
               onClick={handleSync}
