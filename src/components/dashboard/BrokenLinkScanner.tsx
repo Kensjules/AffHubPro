@@ -236,6 +236,14 @@ export function BrokenLinkScanner() {
               <span className="font-medium text-destructive">{stats?.broken || 0}</span> Broken
             </span>
           </div>
+          {(stats?.warning || 0) > 0 && (
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-warning" />
+              <span className="text-sm text-muted-foreground">
+                <span className="font-medium text-warning">{stats?.warning || 0}</span> Warning
+              </span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <XCircle className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
