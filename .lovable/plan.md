@@ -1,46 +1,42 @@
 
 
-# Brand Management Enhancement
+# Bulk Import Links — Paste URLs Feature
 
 ## Overview
-Three changes: add helper text under the Brand/Source label, add delete icons for custom brands in the dropdown, and update the How It Works landing section.
+Add a "Bulk Import" button (outlined style) next to the existing "Add Link" button in the Link Health Monitor header. It opens a centered dialog with a large textarea where users paste one URL per line. On submit, URLs are trimmed, deduplicated against existing links, inserted into `affiliate_links`, and a toast confirms "Imported X links".
 
-## 1. QuickAddPayout.tsx Changes
+## Changes — Single file: `src/components/dashboard/BrokenLinkScanner.tsx`
 
-### Helper text (line 206-207)
-Add beneath the "Brand / Source" label:
+### UI Trigger (line 126-128 area)
+Add a new outlined button between "Add Link" and "Scan Now":
 ```tsx
-<p className="text-muted-foreground/70 text-xs">Type to search or add a custom brand.</p>
+<Button variant="outline" size="sm">
+  <Upload className="w-4 h-4" />
+  Bulk Import
+</Button>
 ```
 
-### Fetch custom brands with IDs
-Change the query (lines 55-67) to select `id, name` instead of just `name`, returning `{ id: string, name: string }[]` so we can delete by ID.
+### Import Dialog
+- Centered `Dialog` with a `Textarea` (min 8 rows) and placeholder: "Paste one URL per line…"
+- Submit button labeled "Import Links", disabled while empty or processing
+- State: `showBulkDialog`, `bulkUrls` (string), `bulkImporting` (boolean)
 
-### Track which brands are custom
-Create a `Set` of custom brand names (lowercase) so we can show trash icons only next to custom brands in the dropdown list.
+### Processing Logic (on submit)
+1. Split textarea by newlines, trim whitespace, filter empty lines
+2. Validate each line is a valid HTTP/HTTPS URL — skip invalid ones
+3. Fetch existing `affiliate_links` URLs for the user, normalize for dedup (lowercase hostname, strip trailing slash)
+4. Filter out duplicates (against DB and within the batch)
+5. Insert valid, unique URLs into `affiliate_links` with `network: "other"`, `status: "active"`
+6. Invalidate `affiliate-links`, `link-stats`, `broken-links` queries so Active count updates immediately
+7. Show toast: `"Imported X links"` (or `"No new links to import"` if all were duplicates/invalid)
+8. Close dialog, reset state
 
-### Delete handler
-Add `handleDeleteBrand(id, name)`:
-1. Show a confirmation toast with a "Confirm" action button using the existing toast system
-2. On confirm: `supabase.from("custom_brands").delete().eq("id", id)`
-3. Invalidate `["custom-brands"]` query
-4. If `brandSource` matches the deleted brand, clear it
-
-### Trash icon in dropdown (lines 227-237)
-For each brand in `filteredBrands`, if it's a custom brand (in the custom set), render a `Trash2` icon on the right side of the `CommandItem`. The icon click calls `handleDeleteBrand` with `e.stopPropagation()` to prevent selecting the brand.
-
-## 2. HowItWorksSection.tsx Change
-
-### Step 02 description (line 14)
-Append the required text to Step 02's description:
-```
-"Connect a network via API or import any affiliate data with CSV. We support ShareASale, Awin, Impact, and direct brand exports. Full Control: Add or remove custom affiliate partners in seconds."
-```
+### No database or edge function changes needed
+The `affiliate_links` table already supports inserts with RLS. The existing `useAddAffiliateLink` pattern is followed but we do a direct batch insert for efficiency.
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/dashboard/QuickAddPayout.tsx` | Helper text, fetch brand IDs, trash icon + delete with confirm toast |
-| `src/components/landing/HowItWorksSection.tsx` | Add "Full Control" text to Step 02 |
+| `src/components/dashboard/BrokenLinkScanner.tsx` | Add Bulk Import button, dialog with textarea, processing logic |
 
