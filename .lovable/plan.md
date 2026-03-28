@@ -1,44 +1,35 @@
 
 
-# Add Placeholder Integration Cards
+# Integrations Page Layout Fix & Content Update
 
 ## Overview
-Add three "Coming Soon" integration cards (ClickBank, Impact, Amazon Associates) to the Integrations page grid. Each card uses the same `glass rounded-xl` styling as the Awin card, with a "Coming Soon" badge and a "Notify Me" button that triggers a toast.
+Two changes: fix broken HTML nesting that causes layout issues, and update ClickBank description.
 
-## Changes — Single file: `src/pages/Integrations.tsx`
+## Problem
+The Awin card is missing its closing `</div>` tag (should be before line 186). The ClickBank, Impact, and Amazon cards are nested *inside* the Awin card instead of being siblings in the grid. This breaks the 3-column layout entirely.
 
-### Add import
-- Add `Bell` from lucide-react (for Notify Me button icon)
-- Add `toast` from `sonner`
+## 1. Fix Card Nesting — `src/pages/Integrations.tsx`
 
-### Add placeholder cards after the Awin card (after line 185, inside the grid div)
+Add the missing `</div>` closing tag for the Awin card after line 185 (after the "Not Connected" block's closing curly brace). This will make all four cards proper siblings inside the grid container, and the existing `grid gap-6 md:grid-cols-2 lg:grid-cols-3` classes will work correctly.
 
-Three cards, each with this structure:
+## 2. Update ClickBank Description (line 198)
+
+Change from:
 ```
-glass rounded-xl p-6 space-y-4 opacity-80
+Popular for health, fitness, and digital products
+```
+To:
+```
+Digital marketplace leader for health and fitness. Direct API integration coming soon.
 ```
 
-Each card contains:
-1. **Header**: Brand name text (styled like AwinLogo area) + "Coming Soon" badge (`variant="outline"` with amber/yellow styling)
-2. **Title & Description**: Network name as `<h3>`, provided label as `<p>`
-3. **Footer**: "Notify Me" button (`variant="outline"`, `size="sm"`) with `Bell` icon — on click calls `toast.success("We'll notify you when [Network] is available!")`
+## 3. GitHub Sync
 
-Card data:
-| Network | Label |
-|---|---|
-| ClickBank | Popular for health, fitness, and digital products |
-| Impact | Connect with brands like Nike, Adidas, and more |
-| Amazon Associates | Track your Amazon referral commissions |
-
-### Brand text styling
-Since there are no official SVG logos to use, render each network name as bold text in the logo area (`p-2 rounded-lg bg-card/50` container, matching Awin logo placement) with a distinct brand color per network:
-- ClickBank: `#2ECC71` (green)
-- Impact: `#6366F1` (indigo)
-- Amazon Associates: `#FF9900` (orange)
+GitHub synchronization is handled automatically by Lovable's integration. "Edge Function" errors during sync are typically unrelated to `vite.config.ts` — they occur when backend functions have deployment issues, which resolve independently. The GitHub connection can be verified in Project Settings → GitHub. A force push is not something Lovable performs programmatically; once the code changes are saved, they auto-sync to the connected repository.
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/pages/Integrations.tsx` | Add 3 Coming Soon placeholder cards with Notify Me toast |
+| `src/pages/Integrations.tsx` | Add missing `</div>` for Awin card, update ClickBank description |
 
