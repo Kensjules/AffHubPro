@@ -68,14 +68,14 @@ export function QuickAddPayout() {
 
   // Set of custom brand names (lowercase) for identification
   const customBrandNames = new Set(
-    (customBrands || []).map((b) => b.name.toLowerCase())
+    (customBrands || []).filter((b) => b.name).map((b) => b.name.toLowerCase())
   );
 
   // Merge and deduplicate brands (case-insensitive)
   const allBrands = (() => {
     const seen = new Set<string>();
     const result: string[] = [];
-    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || []).map((cb) => cb.name)]) {
+    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || []).filter((cb) => cb.name).map((cb) => cb.name)]) {
       const key = b.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
