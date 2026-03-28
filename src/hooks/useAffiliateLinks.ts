@@ -84,7 +84,7 @@ export function useLinkStats() {
     queryKey: ["link-stats", user?.id],
     queryFn: async (): Promise<LinkStats> => {
       if (!user?.id) {
-        return { total: 0, active: 0, broken: 0, recovered: 0, ignored: 0 };
+        return { total: 0, active: 0, broken: 0, recovered: 0, ignored: 0, warning: 0 };
       }
 
       const { data, error } = await supabase
