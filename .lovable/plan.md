@@ -1,95 +1,68 @@
 
 
-# ClickBank Integration — Full Connect Flow
+# Integration Enhancements — Awin Test Connection, Help Text & ClickBank Placeholder
 
 ## Overview
-Transform the ClickBank "Coming Soon" card into a fully functional integration. This involves: a connect dialog with Nickname, Clerk API Key, and Developer Key fields; a "Test Connection" button; a backend edge function to validate and store credentials; and a sync edge function to fetch ClickBank orders into `transactions_cache`.
+Most of the integration infrastructure is already built and working. This plan addresses the specific gaps between what exists and what was requested.
 
-## Architecture
+## Gap Analysis
 
-The integration follows the exact same pattern as the existing Awin integration:
-- **Dialog component** (`ClickBankConnectDialog`) modeled after `AwinConnectDialog`
-- **Hook** (`useClickBankIntegration`) modeled after `useAwinIntegration`
-- **Edge functions**: `store-clickbank-credentials` (validate + store) and `sync-clickbank` (fetch orders)
-- **Storage**: Reuses the existing `user_integrations` table with `integration_type = 'clickbank'`, plus a `nickname` column addition
-
-ClickBank uses two keys: a **Clerk API Key** and a **Developer API Key**. These map to `api_token_encrypted` and `api_secret_encrypted` in `user_integrations`. The nickname requires adding a `nickname` column.
+| Feature | Status | Action Needed |
+|---|---|---|
+| Awin dialog with Publisher ID + Token | Done | Add help text, add Test Connection button |
+| Awin edge functions (store + sync) | Done | Add test-only mode to `store-awin-credentials` |
+| ClickBank dialog with 3 fields | Done | Add Developer Key placeholder value |
+| ClickBank edge functions (store + sync) | Done | No changes needed |
+| ClickBank Test Connection | Done | No changes needed |
+| Automated hourly cron sync | Missing | Add `pg_cron` + `pg_net` scheduled job |
 
 ## Changes
 
-### 1. Database Migration — Add `nickname` column
-```sql
-ALTER TABLE public.user_integrations
-  ADD COLUMN IF NOT EXISTS nickname text;
-```
-This supports labeling connections (e.g., "My Main Account").
+### 1. `src/components/integrations/AwinConnectDialog.tsx`
+- Add help text block: *"Connecting your Awin/ShareASale account automatically imports sales data for all your joined merchants (like ENERGYbits, Ketone IQ, etc.). You only need to provide your API Token once—we'll handle the individual store tracking for you!"*
+- Add a "Test Connection" button (same pattern as ClickBank dialog) with inline success/error badge
+- Add `onTestConnection` prop to the interface
+- Import `HelpCircle`, `CheckCircle2`, `XCircle`, `Badge`, `Tooltip` components
 
-### 2. `src/components/integrations/ClickBankConnectDialog.tsx` — New file
-Dialog with three fields:
-- **Nickname** — text input, required, max 100 chars
-- **Clerk API Key** — password input with eye toggle, help tooltip linking to ClickBank Settings → Account Settings → Clerk API Keys
-- **Developer API Key** — password input with eye toggle, help tooltip linking to ClickBank Settings → Account Settings → Developer API Keys
-- **Test Connection** button — calls `store-clickbank-credentials` with `testOnly: true` flag, shows inline success/error badge
-- **Connect** button — calls the hook's `saveIntegration` method
+### 2. `supabase/functions/store-awin-credentials/index.ts`
+- Add `testOnly` flag support (mirror ClickBank pattern)
+- When `testOnly: true`, call Awin Publisher API with provided credentials to validate, return success/error without storing
+- Test endpoint: `https://api.awin.com/publishers/{publisherId}/accounts` with `Authorization: Bearer {apiToken}`
 
-Follows `AwinConnectDialog` patterns: form validation, error states, loading spinners, disabled states during save.
+### 3. `src/hooks/useAwinIntegration.ts`
+- Add `testConnection(publisherId, apiToken)` method that invokes `store-awin-credentials` with `testOnly: true`
+- Return `testConnection` from the hook
 
-### 3. `src/hooks/useClickBankIntegration.ts` — New file
-Mirrors `useAwinIntegration`:
-- Fetches from `user_integrations` where `integration_type = 'clickbank'`
-- `saveIntegration(nickname, clerkApiKey, devApiKey)` → invokes `store-clickbank-credentials`
-- `testConnection(clerkApiKey, devApiKey)` → invokes `store-clickbank-credentials` with `testOnly: true`
-- `syncNow()` → invokes `sync-clickbank`
-- `disconnectIntegration()` → sets `is_connected = false`
+### 4. `src/pages/Integrations.tsx`
+- Pass `onTestConnection` prop to `AwinConnectDialog`
 
-### 4. `supabase/functions/store-clickbank-credentials/index.ts` — New edge function
-- Validates JWT via `getClaims()`
-- Input validation: nickname (1-100 chars), clerkApiKey (10-500 chars), devApiKey (10-500 chars)
-- If `testOnly` flag is set: makes a test GET request to `https://api.clickbank.com/rest/1.3/orders/list` with auth headers (`Authorization: DEV_KEY:CLERK_KEY`) to verify credentials, returns success/error without storing
-- If not `testOnly`: upserts into `user_integrations` with `integration_type = 'clickbank'`, storing keys in `api_token_encrypted` / `api_secret_encrypted` and nickname
-- Uses service role key for DB writes
+### 5. `src/components/integrations/ClickBankConnectDialog.tsx`
+- Set Developer Key `placeholder` to: `Captain Key (DEV-123456789012345678901234567890123456)`
 
-### 5. `supabase/functions/sync-clickbank/index.ts` — New edge function
-- Validates JWT, retrieves user's ClickBank credentials from `user_integrations`
-- Calls ClickBank Orders API: `GET https://api.clickbank.com/rest/1.3/orders/list?startDate=...&endDate=...`
-- Auth header format: `Authorization: DEV_KEY:CLERK_KEY`
-- Parses XML/JSON response, extracts transactions
-- Upserts into `transactions_cache` using ClickBank receipt as `transaction_id` for idempotency
-- Updates `last_sync_at` on the integration record
-- Extracts merchant/vendor names into `custom_brands` for the Quick-Add Payout dropdown
+### 6. Database — Hourly Cron Sync (via SQL insert, not migration)
+Enable `pg_cron` and `pg_net` extensions, then schedule two hourly jobs:
+- One for `sync-shareasale` (iterates all connected ShareASale accounts)
+- One for `sync-clickbank` (iterates all connected ClickBank accounts)
 
-### 6. `src/pages/Integrations.tsx` — Update ClickBank card
-Replace the "Coming Soon" card with an active integration card (same pattern as Awin card):
-- When not connected: clickable card opens `ClickBankConnectDialog`
-- When connected: shows nickname, last sync time, Settings and Sync Now buttons
-- Remove `opacity-80` and "Coming Soon" badge
-- Import and use the new hook and dialog
+Both jobs call the respective edge functions. Since edge functions currently require a user JWT, we'll create a new `sync-all-accounts` edge function that uses the service role key to iterate all connected integrations and sync each one.
 
-### 7. `supabase/config.toml` — Add function configs
-```toml
-[functions.store-clickbank-credentials]
-verify_jwt = false
-
-[functions.sync-clickbank]
-verify_jwt = false
-```
-
-## Security
-- Credentials stored encrypted via service role (same pattern as Awin)
-- JWT validated in-code via `getClaims()` before any operation
-- RLS on `user_integrations` scopes all queries to `auth.uid() = user_id`
-- Keys transmitted only over HTTPS, never exposed client-side after storage
-- Test connection validates without persisting credentials
+### 7. `supabase/functions/sync-all-accounts/index.ts` — New
+- Invoked by cron (no JWT required, validates via a shared secret or service role)
+- Queries all `user_integrations` where `is_connected = true`
+- For each integration, fetches credentials and calls the appropriate API (Awin or ClickBank)
+- Upserts transactions into `transactions_cache` with idempotency via `transaction_id` unique constraint
+- Updates `last_sync_at` per integration
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| Migration | Add `nickname` column to `user_integrations` |
-| `src/components/integrations/ClickBankConnectDialog.tsx` | New — connect dialog with 3 fields + test button |
-| `src/hooks/useClickBankIntegration.ts` | New — hook for ClickBank CRUD + sync |
-| `supabase/functions/store-clickbank-credentials/index.ts` | New — validate + store credentials |
-| `supabase/functions/sync-clickbank/index.ts` | New — fetch orders + upsert transactions |
-| `src/pages/Integrations.tsx` | Transform ClickBank card from placeholder to active |
-| `supabase/config.toml` | Add function entries |
+| `src/components/integrations/AwinConnectDialog.tsx` | Add help text, Test Connection button with feedback badge |
+| `src/hooks/useAwinIntegration.ts` | Add `testConnection` method |
+| `supabase/functions/store-awin-credentials/index.ts` | Add `testOnly` mode with Awin API validation |
+| `src/pages/Integrations.tsx` | Pass `onTestConnection` to Awin dialog |
+| `src/components/integrations/ClickBankConnectDialog.tsx` | Update Developer Key placeholder text |
+| `supabase/functions/sync-all-accounts/index.ts` | New — cron-triggered bulk sync for all users |
+| `supabase/config.toml` | Add `sync-all-accounts` function entry |
+| SQL insert (not migration) | Enable `pg_cron`/`pg_net`, schedule hourly job |
 
