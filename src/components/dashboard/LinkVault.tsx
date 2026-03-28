@@ -378,7 +378,7 @@ export function LinkVault() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-                <BulkImportDialog />
+                <UnifiedImportDialog triggerVariant="glass" triggerLabel="Bulk Import" />
                 <span className="text-xs text-muted-foreground">or add one manually above</span>
               </div>
             </div>

@@ -245,26 +245,37 @@ export function BrokenLinkScanner() {
         </div>
       )}
 
-      {/* Broken Links List */}
-      {linksLoading ? (
+      {/* Live Results Table */}
+      {allLinksLoading ? (
         <div className="space-y-3">
-          <Skeleton className="w-full h-20 rounded-lg" />
           <Skeleton className="w-full h-20 rounded-lg" />
         </div>
-      ) : brokenLinks && brokenLinks.length > 0 ? (
+      ) : allLinks && allLinks.length > 0 ? (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-foreground">Broken Links Requiring Attention</h4>
-          {brokenLinks.map((link) => (
-            <BrokenLinkItem
-              key={link.id}
-              link={link}
-              onReplace={(newUrl) => replaceLink({ linkId: link.id, newUrl })}
-              onIgnore={() => ignoreLink(link.id)}
-              isReplacing={replacing}
-              isIgnoring={ignoring}
-              truncateUrl={truncateUrl}
-            />
-          ))}
+          <h4 className="text-sm font-medium text-foreground">All Monitored Links</h4>
+          <div className="overflow-x-auto -mx-6">
+            <div className="min-w-[500px] px-6">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/50 hover:bg-transparent">
+                    <TableHead className="text-muted-foreground">Brand / Link</TableHead>
+                    <TableHead className="text-muted-foreground">Status</TableHead>
+                    <TableHead className="text-muted-foreground">Last Checked</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {allLinks.slice(0, 50).map((link) => (
+                    <LiveTableRow key={link.id} link={link} truncateUrl={truncateUrl} />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          {allLinks.length > 50 && (
+            <p className="text-xs text-muted-foreground text-center">
+              Showing 50 of {allLinks.length} links
+            </p>
+          )}
         </div>
       ) : stats?.total === 0 ? (
         <div className="text-center py-8">
@@ -283,7 +294,70 @@ export function BrokenLinkScanner() {
           </p>
         </div>
       )}
+
+      {/* Broken Links Requiring Attention */}
+      {!linksLoading && brokenLinks && brokenLinks.length > 0 && (
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-destructive">Broken Links Requiring Attention</h4>
+          {brokenLinks.map((link) => (
+            <BrokenLinkItem
+              key={link.id}
+              link={link}
+              onReplace={(newUrl) => replaceLink({ linkId: link.id, newUrl })}
+              onIgnore={() => ignoreLink(link.id)}
+              isReplacing={replacing}
+              isIgnoring={ignoring}
+              truncateUrl={truncateUrl}
+            />
+          ))}
+        </div>
+      )}
     </div>
+  );
+}
+
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "active":
+      return <Badge className="bg-success/10 text-success border border-success/20">Active</Badge>;
+    case "broken":
+      return <Badge className="bg-destructive/10 text-destructive border border-destructive/20">Broken</Badge>;
+    case "warning":
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="bg-warning/10 text-warning border border-warning/20 cursor-help">Warning</Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Site blocked automated ping; please verify manually.</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    case "ignored":
+      return <Badge variant="secondary">Ignored</Badge>;
+    default:
+      return <Badge variant="secondary">{status}</Badge>;
+  }
+}
+
+function LiveTableRow({ link, truncateUrl }: { link: import("@/hooks/useAffiliateLinks").AffiliateLink; truncateUrl: (url: string, max?: number) => string }) {
+  const lastChecked = link.last_checked_at
+    ? formatDistanceToNow(new Date(link.last_checked_at), { addSuffix: true })
+    : "Never";
+
+  return (
+    <TableRow className="border-border/50 hover:bg-muted/40 transition-colors">
+      <TableCell>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-foreground">{link.merchant_name || "Unknown"}</span>
+          <span className="text-xs text-muted-foreground truncate max-w-[250px]">{truncateUrl(link.url, 50)}</span>
+        </div>
+      </TableCell>
+      <TableCell>{getStatusBadge(link.status)}</TableCell>
+      <TableCell className="text-xs text-muted-foreground">{lastChecked}</TableCell>
+    </TableRow>
   );
 }
 

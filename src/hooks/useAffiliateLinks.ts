@@ -103,6 +103,7 @@ export function useLinkStats() {
         broken: data?.filter((l) => l.status === "broken").length || 0,
         recovered: data?.filter((l) => l.status === "recovered").length || 0,
         ignored: data?.filter((l) => l.status === "ignored").length || 0,
+        warning: data?.filter((l) => l.status === "warning").length || 0,
       };
 
       return stats;

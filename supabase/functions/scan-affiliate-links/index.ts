@@ -114,7 +114,7 @@ Deno.serve(async (req) => {
         }
 
         // Update link status
-        const newStatus = isBroken ? "broken" : "active";
+        const newStatus = isBroken ? "broken" : isWarning ? "warning" : "active";
         
         // Generate recovery suggestion for broken links
         let recoverySuggestion: string | null = null;
