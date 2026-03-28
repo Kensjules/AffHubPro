@@ -312,8 +312,8 @@ export function BrokenLinkScanner() {
                   <TableRow className="border-border/50 hover:bg-transparent">
                     <TableHead className="text-muted-foreground">Brand / Link</TableHead>
                     <TableHead className="text-muted-foreground">Status</TableHead>
-                    <TableHead className="text-muted-foreground">Last Checked</TableHead>
-                  </TableRow>
+                     <TableHead className="text-muted-foreground">Last Checked</TableHead>
+                     <TableHead className="text-muted-foreground w-[60px]">Actions</TableHead>
                 </TableHeader>
                 <TableBody>
                   {allLinks.slice(0, 50).map((link) => (
