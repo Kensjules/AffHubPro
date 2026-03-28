@@ -350,13 +350,21 @@ export default function Integrations() {
         </div>
       </main>
 
-      {/* Connection Dialog */}
+      {/* Connection Dialogs */}
       <AwinConnectDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
+        open={isAwinDialogOpen}
+        onOpenChange={setIsAwinDialogOpen}
         onConnect={saveIntegration}
         isSaving={isSaving}
         defaultPublisherId={integration?.publisher_id ?? ""}
+      />
+      <ClickBankConnectDialog
+        open={isCBDialogOpen}
+        onOpenChange={setIsCBDialogOpen}
+        onConnect={cbSaveIntegration}
+        onTestConnection={cbTestConnection}
+        isSaving={cbIsSaving}
+        defaultNickname={cbIntegration?.nickname ?? ""}
       />
     </div>
   );

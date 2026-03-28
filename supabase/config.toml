@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+[functions.store-clickbank-credentials]
+verify_jwt = false
+
+[functions.sync-clickbank]
+verify_jwt = false
