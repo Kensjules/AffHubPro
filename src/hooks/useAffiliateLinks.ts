@@ -234,6 +234,37 @@ export function useDeleteLink() {
   });
 }
 
+export function useClearBrokenLinks() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error("Not authenticated");
+
+      const { data, error } = await supabase
+        .from("affiliate_links")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("status", "broken")
+        .select("id");
+
+      if (error) throw error;
+      return data?.length || 0;
+    },
+    onSuccess: (count) => {
+      queryClient.invalidateQueries({ queryKey: ["affiliate-links"] });
+      queryClient.invalidateQueries({ queryKey: ["broken-links"] });
+      queryClient.invalidateQueries({ queryKey: ["link-stats"] });
+      toast.success(`Cleared ${count} broken link${count !== 1 ? "s" : ""}`);
+    },
+    onError: (error) => {
+      console.error("Error clearing broken links:", error);
+      toast.error("Failed to clear broken links");
+    },
+  });
+}
+
 export function useScanLinks() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
