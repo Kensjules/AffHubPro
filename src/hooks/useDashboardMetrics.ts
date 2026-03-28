@@ -64,14 +64,39 @@ export function useDashboardMetrics() {
 
       if (allTimeError) throw allTimeError;
 
+      // Fetch payouts (always count as paid revenue)
+      const { data: allPayouts } = await supabase
+        .from("payouts" as any)
+        .select("amount, brand_source")
+        .eq("user_id", user.id) as { data: Array<{ amount: number; brand_source: string }> | null };
+
+      const { data: currentPayouts } = await supabase
+        .from("payouts" as any)
+        .select("amount, brand_source")
+        .eq("user_id", user.id)
+        .gte("payout_date", thirtyDaysAgo.toISOString()) as { data: Array<{ amount: number; brand_source: string }> | null };
+
+      const { data: previousPayouts } = await supabase
+        .from("payouts" as any)
+        .select("amount, brand_source")
+        .eq("user_id", user.id)
+        .gte("payout_date", sixtyDaysAgo.toISOString())
+        .lt("payout_date", thirtyDaysAgo.toISOString()) as { data: Array<{ amount: number; brand_source: string }> | null };
+
       const current = calculateMetrics(currentData || []);
       const previous = calculateMetrics(previousData || []);
       const allTime = calculateMetrics(allTimeData || []);
 
+      const payoutTotal = (allPayouts || []).reduce((s, p) => s + Number(p.amount), 0);
+      const payoutCurrentTotal = (currentPayouts || []).reduce((s, p) => s + Number(p.amount), 0);
+      const payoutPreviousTotal = (previousPayouts || []).reduce((s, p) => s + Number(p.amount), 0);
+
+      const payoutBrands = new Set((allPayouts || []).map(p => p.brand_source));
+
       return {
-        totalRevenue: allTime.totalRevenue,
+        totalRevenue: allTime.totalRevenue + payoutTotal,
         pendingPayouts: allTime.pendingPayouts,
-        activeStores: allTime.activeStores,
+        activeStores: allTime.activeStores + payoutBrands.size,
         revenueChange: calculateChange(current.totalRevenue, previous.totalRevenue),
         pendingChange: calculateChange(current.pendingPayouts, previous.pendingPayouts),
         storesChange: calculateChange(current.activeStores, previous.activeStores),
