@@ -85,7 +85,7 @@ export default function Integrations() {
             }`}
             onClick={() => {
               if (!isConnected && !isLoading) {
-                setIsDialogOpen(true);
+                setIsAwinDialogOpen(true);
               }
             }}
           >
