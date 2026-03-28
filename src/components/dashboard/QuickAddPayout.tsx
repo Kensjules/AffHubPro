@@ -75,7 +75,7 @@ export function QuickAddPayout() {
   const allBrands = (() => {
     const seen = new Set<string>();
     const result: string[] = [];
-    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || []).map((cb) => cb.name)]) {
+    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || []).filter((cb) => cb.name).map((cb) => cb.name)]) {
       const key = b.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
