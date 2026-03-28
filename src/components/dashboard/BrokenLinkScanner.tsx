@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { 
   Link2, 
   RefreshCw, 
@@ -10,6 +10,7 @@ import {
   EyeOff,
   Plus
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,39 @@ export function BrokenLinkScanner() {
   const [newUrl, setNewUrl] = useState("");
   const [newMerchant, setNewMerchant] = useState("");
   const [newNetwork, setNewNetwork] = useState<"shareasale" | "awin" | "other">("shareasale");
+
+  const [scanProgress, setScanProgress] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearScanInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearScanInterval(), [clearScanInterval]);
+
+  const handleScan = useCallback(() => {
+    setIsAnimating(true);
+    setScanProgress(0);
+
+    intervalRef.current = setInterval(() => {
+      setScanProgress((prev) => (prev >= 95 ? 95 : prev + 3.3));
+    }, 100);
+
+    scanLinks(undefined, {
+      onSettled: () => {
+        clearScanInterval();
+        setScanProgress(100);
+        setTimeout(() => {
+          setIsAnimating(false);
+          setScanProgress(0);
+        }, 300);
+      },
+    });
+  }, [scanLinks, clearScanInterval]);
 
   const handleAddLink = () => {
     if (!newUrl.trim()) return;
@@ -147,12 +181,20 @@ export function BrokenLinkScanner() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          <Button variant="hero" size="sm" onClick={() => scanLinks()} disabled={scanning}>
-            <RefreshCw className={`w-4 h-4 ${scanning ? "animate-spin" : ""}`} />
-            {scanning ? "Scanning..." : "Scan Now"}
+          <Button variant="hero" size="sm" onClick={handleScan} disabled={isAnimating || scanning}>
+            <RefreshCw className={`w-4 h-4 ${isAnimating || scanning ? "animate-spin" : ""}`} />
+            {isAnimating ? "Scanning..." : "Scan Now"}
           </Button>
         </div>
       </div>
+
+      {/* Progress Bar */}
+      {isAnimating && (
+        <div className="space-y-1">
+          <Progress value={scanProgress} className="h-2" />
+          <p className="text-xs text-muted-foreground text-center">Scanning affiliate links…</p>
+        </div>
+      )}
 
       {/* Stats */}
       {isLoading ? (
