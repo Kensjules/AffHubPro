@@ -28,6 +28,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ShareASaleConnectDialog } from "@/components/integrations/ShareASaleConnectDialog";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { LiveRevenueFeed } from "@/components/dashboard/LiveRevenueFeed";
+import { UserAvatar } from "@/components/UserAvatar";
 import { LinkVault } from "@/components/dashboard/LinkVault";
 import {
   AlertDialog,
