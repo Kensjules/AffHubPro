@@ -183,7 +183,69 @@ export default function Integrations() {
                 </Tooltip>
               </div>
             )}
+          {/* ClickBank — Coming Soon */}
+          <div className="glass rounded-xl p-6 space-y-4 opacity-80">
+            <div className="flex items-start justify-between">
+              <div className="p-2 rounded-lg bg-card/50">
+                <span className="text-lg font-bold" style={{ color: "#2ECC71" }}>ClickBank</span>
+              </div>
+              <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                Coming Soon
+              </Badge>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">ClickBank</h3>
+              <p className="text-sm text-muted-foreground mt-1">Popular for health, fitness, and digital products</p>
+            </div>
+            <div className="pt-2 border-t border-border/30">
+              <Button variant="outline" size="sm" onClick={() => toast.success("We'll notify you when ClickBank is available!")}>
+                <Bell className="h-4 w-4 mr-1" /> Notify Me
+              </Button>
+            </div>
           </div>
+
+          {/* Impact — Coming Soon */}
+          <div className="glass rounded-xl p-6 space-y-4 opacity-80">
+            <div className="flex items-start justify-between">
+              <div className="p-2 rounded-lg bg-card/50">
+                <span className="text-lg font-bold" style={{ color: "#6366F1" }}>Impact</span>
+              </div>
+              <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                Coming Soon
+              </Badge>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Impact</h3>
+              <p className="text-sm text-muted-foreground mt-1">Connect with brands like Nike, Adidas, and more</p>
+            </div>
+            <div className="pt-2 border-t border-border/30">
+              <Button variant="outline" size="sm" onClick={() => toast.success("We'll notify you when Impact is available!")}>
+                <Bell className="h-4 w-4 mr-1" /> Notify Me
+              </Button>
+            </div>
+          </div>
+
+          {/* Amazon Associates — Coming Soon */}
+          <div className="glass rounded-xl p-6 space-y-4 opacity-80">
+            <div className="flex items-start justify-between">
+              <div className="p-2 rounded-lg bg-card/50">
+                <span className="text-lg font-bold" style={{ color: "#FF9900" }}>Amazon</span>
+              </div>
+              <Badge variant="outline" className="text-amber-500 border-amber-500/30 bg-amber-500/10">
+                Coming Soon
+              </Badge>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Amazon Associates</h3>
+              <p className="text-sm text-muted-foreground mt-1">Track your Amazon referral commissions</p>
+            </div>
+            <div className="pt-2 border-t border-border/30">
+              <Button variant="outline" size="sm" onClick={() => toast.success("We'll notify you when Amazon Associates is available!")}>
+                <Bell className="h-4 w-4 mr-1" /> Notify Me
+              </Button>
+            </div>
+          </div>
+        </div>
         </div>
       </main>
 
