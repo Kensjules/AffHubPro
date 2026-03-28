@@ -314,6 +314,7 @@ export function BrokenLinkScanner() {
                     <TableHead className="text-muted-foreground">Status</TableHead>
                      <TableHead className="text-muted-foreground">Last Checked</TableHead>
                      <TableHead className="text-muted-foreground w-[60px]">Actions</TableHead>
+                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {allLinks.slice(0, 50).map((link) => (
