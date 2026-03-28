@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      payouts: {
+        Row: {
+          amount: number
+          brand_source: string
+          category: string
+          created_at: string
+          id: string
+          payout_date: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          brand_source: string
+          category?: string
+          created_at?: string
+          id?: string
+          payout_date?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          brand_source?: string
+          category?: string
+          created_at?: string
+          id?: string
+          payout_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
