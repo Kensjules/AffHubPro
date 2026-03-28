@@ -41,7 +41,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { BulkPasteImportDialog } from "./BulkPasteImportDialog";
+import { UnifiedImportDialog } from "./UnifiedImportDialog";
+import { useAffiliateLinks } from "@/hooks/useAffiliateLinks";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function BrokenLinkScanner() {
   const { data: brokenLinks, isLoading: linksLoading } = useBrokenLinks();
