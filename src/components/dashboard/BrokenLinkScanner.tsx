@@ -217,10 +217,34 @@ export function BrokenLinkScanner() {
             </DialogContent>
           </Dialog>
           <UnifiedImportDialog triggerLabel="Import Links" />
+          {(stats?.broken || 0) > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" className="text-destructive border-destructive/30 hover:bg-destructive/10" disabled={clearing}>
+                  <Trash2 className="w-4 h-4" />
+                  {clearing ? "Clearing..." : "Clear Broken Links"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Clear all broken links?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete {stats?.broken || 0} broken link{(stats?.broken || 0) !== 1 ? "s" : ""}. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => clearBrokenLinks()}
+                  >
+                    Delete All Broken
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button variant="hero" size="sm" onClick={handleScan} disabled={isAnimating || scanning}>
-            <RefreshCw className={`w-4 h-4 ${isAnimating || scanning ? "animate-spin" : ""}`} />
-            {isAnimating ? "Scanning..." : "Scan Now"}
-          </Button>
         </div>
       </div>
 
