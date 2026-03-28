@@ -48,10 +48,8 @@ export function DashboardSidebar() {
     }
   };
 
-  // Get display name or email
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
-  const userInitials = displayName.slice(0, 2).toUpperCase();
 
   return (
     <aside 
