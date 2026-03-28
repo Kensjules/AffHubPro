@@ -317,9 +317,9 @@ export function BrokenLinkScanner() {
                    </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {allLinks.slice(0, 50).map((link) => (
-                    <LiveTableRow key={link.id} link={link} truncateUrl={truncateUrl} />
-                  ))}
+                   {allLinks.slice(0, 50).map((link) => (
+                     <LiveTableRow key={link.id} link={link} truncateUrl={truncateUrl} onDelete={deleteLink} />
+                   ))}
                 </TableBody>
               </Table>
             </div>
