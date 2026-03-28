@@ -1,4 +1,4 @@
-import { BarChart3, Shield, Zap, RefreshCw, Download, Globe } from "lucide-react";
+import { BarChart3, Shield, Zap, Upload, User, Globe } from "lucide-react";
 
 const features = [
   {
@@ -8,8 +8,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Bank-level Security",
-    description: "Your API credentials are encrypted and stored securely. We never share your data."
+    title: "Automated Link Protection",
+    description: "Real-time scanning detects broken or hijacked affiliate links before they cost you commissions. Protect every click, automatically."
   },
   {
     icon: Zap,
@@ -17,14 +17,14 @@ const features = [
     description: "Optimized for speed with smart caching. Get insights in milliseconds, not minutes."
   },
   {
-    icon: RefreshCw,
-    title: "Auto-sync",
-    description: "Your data syncs automatically every hour. Always have the latest numbers at your fingertips."
+    icon: Upload,
+    title: "Universal Brand Sync",
+    description: "Import a spreadsheet and watch your brand list build itself. The platform learns your business partners instantly — no manual entry required."
   },
   {
-    icon: Download,
-    title: "Export Anywhere",
-    description: "Download your transaction data as CSV for accounting, taxes, or deeper analysis."
+    icon: User,
+    title: "Personalized Dashboard",
+    description: "Custom profile, managed brand list, and tailored analytics. Your dashboard adapts to your business, not the other way around."
   },
   {
     icon: Globe,
