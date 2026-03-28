@@ -183,6 +183,8 @@ export default function Integrations() {
                 </Tooltip>
               </div>
             )}
+          </div>
+
           {/* ClickBank — Coming Soon */}
           <div className="glass rounded-xl p-6 space-y-4 opacity-80">
             <div className="flex items-start justify-between">
