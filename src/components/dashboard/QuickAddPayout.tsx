@@ -240,7 +240,7 @@ export function QuickAddPayout() {
                           <CommandItem
                             value={`__add__${brandSource.trim()}`}
                             onSelect={handleAddNewBrand}
-                            className="text-primary"
+                            className="mx-2 my-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-semibold hover:bg-primary/25 transition-colors"
                           >
                             <Plus className="w-4 h-4 mr-2" />
                             Add &ldquo;{brandSource.trim().slice(0, 100)}&rdquo; as a new brand
