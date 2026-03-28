@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/popover";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -26,7 +25,7 @@ import {
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast";
 
 const BRAND_SUGGESTIONS = [
@@ -51,10 +50,73 @@ export function QuickAddPayout() {
   const [category, setCategory] = useState("direct_brand");
   const [brandOpen, setBrandOpen] = useState(false);
 
+  // Fetch custom brands
+  const { data: customBrands } = useQuery({
+    queryKey: ["custom-brands"],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("custom_brands" as any)
+        .select("name")
+        .eq("user_id", user.id)
+        .order("name");
+      if (error) throw error;
+      return ((data as any[]) || []).map((b: any) => b.name as string);
+    },
+    enabled: !!user?.id,
+  });
+
+  // Merge and deduplicate brands (case-insensitive)
+  const allBrands = (() => {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const b of [...BRAND_SUGGESTIONS, ...(customBrands || [])]) {
+      const key = b.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        result.push(b);
+      }
+    }
+    return result;
+  })();
+
+  const filteredBrands = allBrands.filter((b) =>
+    b.toLowerCase().includes(brandSource.toLowerCase())
+  );
+
+  const exactMatch = allBrands.some(
+    (b) => b.toLowerCase() === brandSource.trim().toLowerCase()
+  );
+
   const resetForm = () => {
     setAmount("");
     setBrandSource("");
     setCategory("direct_brand");
+  };
+
+  const saveBrandIfNew = async (name: string) => {
+    if (!user?.id) return;
+    const trimmed = name.trim().slice(0, 100);
+    if (!trimmed) return;
+    // Case-insensitive check against known brands
+    if (allBrands.some((b) => b.toLowerCase() === trimmed.toLowerCase())) return;
+    await supabase.from("custom_brands" as any).insert({
+      user_id: user.id,
+      name: trimmed,
+    } as any);
+    queryClient.invalidateQueries({ queryKey: ["custom-brands"] });
+  };
+
+  const handleAddNewBrand = async () => {
+    const trimmed = brandSource.trim().slice(0, 100);
+    if (!trimmed || !user?.id) return;
+    await supabase.from("custom_brands" as any).insert({
+      user_id: user.id,
+      name: trimmed,
+    } as any);
+    queryClient.invalidateQueries({ queryKey: ["custom-brands"] });
+    setBrandSource(trimmed);
+    setBrandOpen(false);
   };
 
   const handleSave = async () => {
@@ -65,16 +127,21 @@ export function QuickAddPayout() {
       toast({ title: "Invalid amount", description: "Please enter a valid positive number.", variant: "destructive" });
       return;
     }
-    if (brandSource.trim().length === 0 || brandSource.length > 200) {
+    const trimmedBrand = brandSource.trim().slice(0, 100);
+    if (trimmedBrand.length === 0) {
       toast({ title: "Invalid brand", description: "Please enter a valid brand/source name.", variant: "destructive" });
       return;
     }
 
     setSaving(true);
+
+    // Auto-save brand if new
+    await saveBrandIfNew(trimmedBrand);
+
     const { error } = await supabase.from("payouts" as any).insert({
       user_id: user.id,
       amount: parsedAmount,
-      brand_source: brandSource.trim(),
+      brand_source: trimmedBrand,
       category,
     } as any);
 
@@ -87,7 +154,7 @@ export function QuickAddPayout() {
 
     toast({
       title: "Payout logged",
-      description: `$${parsedAmount.toFixed(2)} from ${brandSource} added successfully.`,
+      description: `$${parsedAmount.toFixed(2)} from ${trimmedBrand} added successfully.`,
     });
 
     queryClient.invalidateQueries({ queryKey: ["dashboard-metrics"] });
@@ -156,18 +223,8 @@ export function QuickAddPayout() {
                       onValueChange={setBrandSource}
                     />
                     <CommandList>
-                      <CommandEmpty>
-                        <button
-                          className="w-full px-2 py-1.5 text-sm text-left hover:bg-accent rounded cursor-pointer"
-                          onClick={() => setBrandOpen(false)}
-                        >
-                          Use "{brandSource}"
-                        </button>
-                      </CommandEmpty>
                       <CommandGroup>
-                        {BRAND_SUGGESTIONS.filter((b) =>
-                          b.toLowerCase().includes(brandSource.toLowerCase())
-                        ).map((brand) => (
+                        {filteredBrands.map((brand) => (
                           <CommandItem
                             key={brand}
                             value={brand}
@@ -179,6 +236,16 @@ export function QuickAddPayout() {
                             {brand}
                           </CommandItem>
                         ))}
+                        {brandSource.trim().length > 0 && !exactMatch && (
+                          <CommandItem
+                            value={`__add__${brandSource.trim()}`}
+                            onSelect={handleAddNewBrand}
+                            className="text-primary"
+                          >
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add &ldquo;{brandSource.trim().slice(0, 100)}&rdquo; as a new brand
+                          </CommandItem>
+                        )}
                       </CommandGroup>
                     </CommandList>
                   </Command>
