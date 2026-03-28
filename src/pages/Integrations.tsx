@@ -7,7 +7,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info, RefreshCw, CheckCircle2, Settings2, Loader2 } from "lucide-react";
+import { Info, RefreshCw, CheckCircle2, Settings2, Loader2, Bell } from "lucide-react";
+import { toast } from "sonner";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { useAwinIntegration } from "@/hooks/useAwinIntegration";
 import { format } from "date-fns";
