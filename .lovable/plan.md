@@ -1,41 +1,46 @@
 
 
-# Enhance "Add as New Brand" Button in Quick-Add Payout
+# Brand Management Enhancement
 
 ## Overview
-Restyle the "Add as new brand" CommandItem from a subtle list item into a visually prominent gold button, and ensure it auto-selects the brand after saving.
+Three changes: add helper text under the Brand/Source label, add delete icons for custom brands in the dropdown, and update the How It Works landing section.
 
-## Change — Single file: `src/components/dashboard/QuickAddPayout.tsx`
+## 1. QuickAddPayout.tsx Changes
 
-### Visual (lines 239-248)
-Replace the current `CommandItem` with a styled version using the brand gold color:
-
+### Helper text (line 206-207)
+Add beneath the "Brand / Source" label:
 ```tsx
-{brandSource.trim().length > 0 && !exactMatch && (
-  <CommandItem
-    value={`__add__${brandSource.trim()}`}
-    onSelect={handleAddNewBrand}
-    className="mx-2 my-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-semibold hover:bg-primary/25 transition-colors"
-  >
-    <Plus className="w-4 h-4 mr-2" />
-    Add &ldquo;{brandSource.trim().slice(0, 100)}&rdquo; as a new brand
-  </CommandItem>
-)}
+<p className="text-muted-foreground/70 text-xs">Type to search or add a custom brand.</p>
 ```
 
-This uses `bg-primary/15` with `border-primary/30` and `text-primary` — the gold color from the design system (`--primary: 45 93% 47%`). This gives it a distinct "button-like" appearance with gold tint, border, and bold text while remaining inside the Command list.
+### Fetch custom brands with IDs
+Change the query (lines 55-67) to select `id, name` instead of just `name`, returning `{ id: string, name: string }[]` so we can delete by ID.
 
-### Functional — `handleAddNewBrand` already works correctly
-The existing `handleAddNewBrand` (lines 104-112) already:
-1. Inserts into `custom_brands` table
-2. Sets `setBrandSource(trimmed)` — auto-selects the brand
-3. Closes the popover via `setBrandOpen(false)`
+### Track which brands are custom
+Create a `Set` of custom brand names (lowercase) so we can show trash icons only next to custom brands in the dropdown list.
 
-No functional changes needed — it already auto-selects and closes. The popover (not the Sheet drawer) closes, returning focus to the payout form with the brand pre-filled. This is the correct UX — the Sheet should stay open so the user can complete and save the payout.
+### Delete handler
+Add `handleDeleteBrand(id, name)`:
+1. Show a confirmation toast with a "Confirm" action button using the existing toast system
+2. On confirm: `supabase.from("custom_brands").delete().eq("id", id)`
+3. Invalidate `["custom-brands"]` query
+4. If `brandSource` matches the deleted brand, clear it
+
+### Trash icon in dropdown (lines 227-237)
+For each brand in `filteredBrands`, if it's a custom brand (in the custom set), render a `Trash2` icon on the right side of the `CommandItem`. The icon click calls `handleDeleteBrand` with `e.stopPropagation()` to prevent selecting the brand.
+
+## 2. HowItWorksSection.tsx Change
+
+### Step 02 description (line 14)
+Append the required text to Step 02's description:
+```
+"Connect a network via API or import any affiliate data with CSV. We support ShareASale, Awin, Impact, and direct brand exports. Full Control: Add or remove custom affiliate partners in seconds."
+```
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/dashboard/QuickAddPayout.tsx` | Restyle "Add as new brand" CommandItem with gold background, border, bold text |
+| `src/components/dashboard/QuickAddPayout.tsx` | Helper text, fetch brand IDs, trash icon + delete with confirm toast |
+| `src/components/landing/HowItWorksSection.tsx` | Add "Full Control" text to Step 02 |
 
