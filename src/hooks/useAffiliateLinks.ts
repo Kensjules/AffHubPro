@@ -9,7 +9,7 @@ export interface AffiliateLink {
   url: string;
   merchant_name: string | null;
   network: "shareasale" | "awin" | "other";
-  status: "active" | "broken" | "recovered" | "ignored";
+  status: "active" | "broken" | "recovered" | "ignored" | "warning";
   last_checked_at: string | null;
   http_status_code: number | null;
   recovery_suggestion: string | null;
