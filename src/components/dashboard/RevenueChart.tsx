@@ -84,6 +84,8 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
               width={60}
             />
             <ChartTooltip 
+              cursor={false}
+              isAnimationActive={false}
               content={
                 <ChartTooltipContent 
                   formatter={(value) => [`$${Number(value).toFixed(2)}`, "Revenue"]}
@@ -96,6 +98,8 @@ export function RevenueChart({ data, isLoading }: RevenueChartProps) {
               stroke="hsl(var(--primary))"
               strokeWidth={2}
               fill="url(#revenueGradient)"
+              activeDot={{ r: 5, strokeWidth: 2 }}
+              dot={false}
             />
           </AreaChart>
         </ChartContainer>
