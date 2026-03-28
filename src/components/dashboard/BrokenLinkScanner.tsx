@@ -41,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { BulkImportDialog } from "./BulkImportDialog";
 
 export function BrokenLinkScanner() {
   const { data: brokenLinks, isLoading: linksLoading } = useBrokenLinks();
