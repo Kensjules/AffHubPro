@@ -272,6 +272,7 @@ export type Database = {
           integration_type: string
           is_connected: boolean | null
           last_sync_at: string | null
+          nickname: string | null
           publisher_id: string | null
           updated_at: string | null
           user_id: string
@@ -284,6 +285,7 @@ export type Database = {
           integration_type: string
           is_connected?: boolean | null
           last_sync_at?: string | null
+          nickname?: string | null
           publisher_id?: string | null
           updated_at?: string | null
           user_id: string
@@ -296,6 +298,7 @@ export type Database = {
           integration_type?: string
           is_connected?: boolean | null
           last_sync_at?: string | null
+          nickname?: string | null
           publisher_id?: string | null
           updated_at?: string | null
           user_id?: string
