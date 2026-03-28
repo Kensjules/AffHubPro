@@ -68,7 +68,7 @@ export function QuickAddPayout() {
 
   // Set of custom brand names (lowercase) for identification
   const customBrandNames = new Set(
-    (customBrands || []).map((b) => b.name.toLowerCase())
+    (customBrands || []).filter((b) => b.name).map((b) => b.name.toLowerCase())
   );
 
   // Merge and deduplicate brands (case-insensitive)
