@@ -148,7 +148,7 @@ export default function Integrations() {
                     className="flex-1"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setIsDialogOpen(true);
+                      setIsAwinDialogOpen(true);
                     }}
                   >
                     <Settings2 className="h-4 w-4 mr-1" />
