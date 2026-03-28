@@ -197,7 +197,7 @@ export default function Integrations() {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-foreground">ClickBank</h3>
-              <p className="text-sm text-muted-foreground mt-1">Popular for health, fitness, and digital products</p>
+              <p className="text-sm text-muted-foreground mt-1">Digital marketplace leader for health and fitness. Direct API integration coming soon.</p>
             </div>
             <div className="pt-2 border-t border-border/30">
               <Button variant="outline" size="sm" onClick={() => toast.success("We'll notify you when ClickBank is available!")}>
