@@ -22,6 +22,8 @@ import {
   useReplaceLink,
   useIgnoreLink,
   useAddAffiliateLink,
+  useDeleteLink,
+  useClearBrokenLinks,
   type AffiliateLink,
 } from "@/hooks/useAffiliateLinks";
 import { formatDistanceToNow } from "date-fns";
