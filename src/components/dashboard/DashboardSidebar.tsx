@@ -11,9 +11,9 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
+import { UserAvatar } from "@/components/UserAvatar";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,10 +48,8 @@ export function DashboardSidebar() {
     }
   };
 
-  // Get display name or email
   const displayName = profile?.display_name || user?.email?.split("@")[0] || "User";
   const userEmail = user?.email || "";
-  const userInitials = displayName.slice(0, 2).toUpperCase();
 
   return (
     <aside 
@@ -118,11 +116,7 @@ export function DashboardSidebar() {
           "flex items-center gap-3 px-2 py-2",
           collapsed && "justify-center"
         )}>
-          <Avatar className="h-9 w-9 border border-primary/20">
-            <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+          <UserAvatar size="sm" />
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-foreground truncate">{displayName}</p>

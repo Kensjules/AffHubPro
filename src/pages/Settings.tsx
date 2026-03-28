@@ -28,6 +28,7 @@ import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { ShareASaleConnectDialog } from "@/components/integrations/ShareASaleConnectDialog";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { LiveRevenueFeed } from "@/components/dashboard/LiveRevenueFeed";
+import { UserAvatar } from "@/components/UserAvatar";
 import { LinkVault } from "@/components/dashboard/LinkVault";
 import {
   AlertDialog,
@@ -206,6 +207,14 @@ export default function Settings() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Profile Picture */}
+                    <div className="flex items-center gap-4 mb-2">
+                      <UserAvatar size="lg" editable />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Profile Photo</p>
+                        <p className="text-xs text-muted-foreground">Click the avatar to upload a new photo</p>
+                      </div>
+                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="displayName">Display Name</Label>
                       <Input

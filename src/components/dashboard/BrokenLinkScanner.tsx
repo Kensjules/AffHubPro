@@ -227,9 +227,9 @@ export function BrokenLinkScanner() {
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Clear all broken links?</AlertDialogTitle>
+                  <AlertDialogTitle>Remove Broken Links</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete {stats?.broken || 0} broken link{(stats?.broken || 0) !== 1 ? "s" : ""}. This action cannot be undone.
+                    Are you sure you want to remove all {stats?.broken || 0} broken link{(stats?.broken || 0) !== 1 ? "s" : ""}? This action cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -238,7 +238,7 @@ export function BrokenLinkScanner() {
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     onClick={() => clearBrokenLinks()}
                   >
-                    Delete All Broken
+                    Confirm Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
