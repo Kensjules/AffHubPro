@@ -82,6 +82,8 @@ export function BrokenLinkScanner() {
   const { mutate: replaceLink, isPending: replacing } = useReplaceLink();
   const { mutate: ignoreLink, isPending: ignoring } = useIgnoreLink();
   const { mutate: addLink, isPending: adding } = useAddAffiliateLink();
+  const { mutate: deleteLink } = useDeleteLink();
+  const { mutate: clearBrokenLinks, isPending: clearing } = useClearBrokenLinks();
 
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newUrl, setNewUrl] = useState("");
