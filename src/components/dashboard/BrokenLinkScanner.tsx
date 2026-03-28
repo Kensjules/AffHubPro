@@ -55,6 +55,39 @@ export function BrokenLinkScanner() {
   const [newMerchant, setNewMerchant] = useState("");
   const [newNetwork, setNewNetwork] = useState<"shareasale" | "awin" | "other">("shareasale");
 
+  const [scanProgress, setScanProgress] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const clearScanInterval = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => clearScanInterval(), [clearScanInterval]);
+
+  const handleScan = useCallback(() => {
+    setIsAnimating(true);
+    setScanProgress(0);
+
+    intervalRef.current = setInterval(() => {
+      setScanProgress((prev) => (prev >= 95 ? 95 : prev + 3.3));
+    }, 100);
+
+    scanLinks(undefined, {
+      onSettled: () => {
+        clearScanInterval();
+        setScanProgress(100);
+        setTimeout(() => {
+          setIsAnimating(false);
+          setScanProgress(0);
+        }, 300);
+      },
+    });
+  }, [scanLinks, clearScanInterval]);
+
   const handleAddLink = () => {
     if (!newUrl.trim()) return;
     addLink(
