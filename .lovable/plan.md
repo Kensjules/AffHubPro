@@ -1,54 +1,32 @@
 
 
-# Custom Brand Persistence for Quick-Add Payout
+# Link Health Monitor — 3-Second Progress Bar Enhancement
 
 ## Overview
-Create a `custom_brands` table so user-added brands persist across sessions. Merge them with the hardcoded suggestions in the combobox dropdown. On save, if the typed brand is new, auto-insert it into `custom_brands`. The existing query invalidation already handles immediate dashboard metric updates.
+The Link Health Monitor already works end-to-end: the "Scan Now" button calls the `scan-affiliate-links` edge function, which performs HEAD requests and updates statuses. The active/broken counts are already dynamic from the database. The missing piece is a **3-second animated progress bar** during scanning to give a premium feel.
 
-## Database
+## Changes
 
-### New `custom_brands` table (migration)
-```sql
-CREATE TABLE public.custom_brands (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  name text NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (user_id, name)
-);
+### `src/components/dashboard/BrokenLinkScanner.tsx`
 
-ALTER TABLE public.custom_brands ENABLE ROW LEVEL SECURITY;
+1. **Add progress bar state** — Track `scanProgress` (0-100) and `isAnimating` boolean.
+2. **On "Scan Now" click**:
+   - Set `isAnimating = true`, start a 3-second interval that increments `scanProgress` from 0 to ~95 over 3 seconds (e.g., tick every 100ms, increment by ~3.3).
+   - Fire `scanLinks()` mutation simultaneously.
+   - When the mutation completes (success or error), jump progress to 100, wait 300ms, then hide the bar.
+3. **Render a `<Progress />` component** (already exists in `src/components/ui/progress.tsx`) between the stats row and the broken links list, visible only when `isAnimating` is true.
+4. **Disable "Scan Now" button** while `isAnimating` is true (not just while `scanning`).
+5. **Show scan result summary** — After scan completes, display a brief toast with "X links scanned, Y broken found" (already done via `useScanLinks` `onSuccess`).
 
-CREATE POLICY "Users can view own brands" ON public.custom_brands
-  FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own brands" ON public.custom_brands
-  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can delete own brands" ON public.custom_brands
-  FOR DELETE TO authenticated USING (auth.uid() = user_id);
-```
-
-## Frontend Changes
-
-### `src/components/dashboard/QuickAddPayout.tsx`
-
-1. **Fetch custom brands** — Use `useQuery` with key `["custom-brands"]` to load from `custom_brands` table on mount.
-
-2. **Merge brand lists** — Combine hardcoded `BRAND_SUGGESTIONS` with fetched custom brands (deduplicated, case-insensitive).
-
-3. **"Add new brand" option** — When the typed text doesn't match any existing brand (hardcoded or custom), show a `CommandItem` reading `Add "[typed text]" as a new brand` (replaces the current `CommandEmpty` button). On select:
-   - Insert into `custom_brands` (case-insensitive duplicate check via the DB unique constraint; trim + limit to 100 chars)
-   - Set `brandSource` to the new name
-   - Invalidate `["custom-brands"]` query
-   - Close popover
-
-4. **On Save Payout** — Also upsert the brand into `custom_brands` if it doesn't exist yet (handles free-text "Use" entries). The existing `queryClient.invalidateQueries` for `dashboard-metrics` and `earnings-chart` already ensures immediate revenue card/chart updates.
-
-5. **Input validation** — Brand names trimmed, max 100 chars, sanitized (no HTML). Case-insensitive duplicate prevention via `UNIQUE(user_id, lower(name))` or application-level lowercased check before insert.
+### No database or edge function changes needed
+- The `affiliate_links` table already has `status`, `last_checked_at`, `http_status_code` fields.
+- The edge function already performs HEAD requests with 10s timeout and updates statuses.
+- The `useLinkStats` hook already counts active/broken/ignored from the database dynamically.
+- The `useBrokenLinks` hook already fetches broken links for display.
 
 ## Files Modified
 
-| File | Action |
+| File | Change |
 |---|---|
-| Migration | Create `custom_brands` table with RLS |
-| `src/components/dashboard/QuickAddPayout.tsx` | Fetch + merge custom brands, add "Add new brand" UX, auto-save new brands on payout save |
+| `src/components/dashboard/BrokenLinkScanner.tsx` | Add progress bar animation during scan, import `Progress` component |
 
