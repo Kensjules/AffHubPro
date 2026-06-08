@@ -40,42 +40,39 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ success: false, message: "Invalid Developer API Key format" }), { status: 400, headers: jsonHeaders });
     }
 
-    // Test connection by calling ClickBank API
-    try {
-      const testUrl = "https://api.clickbank.com/rest/1.3/orders/list";
-      const testResponse = await fetch(testUrl, {
-        method: "GET",
-        headers: {
-          "Accept": "application/json",
-          "Authorization": `${devApiKey.trim()}:${clerkApiKey.trim()}`,
-        },
-      });
-
-      if (testResponse.status === 401 || testResponse.status === 403) {
+    // Test mode: attempt to validate against ClickBank but never block storage.
+    if (testOnly) {
+      try {
+        const testResponse = await fetch("https://api.clickbank.com/rest/1.3/orders/list", {
+          method: "GET",
+          headers: {
+            "Accept": "application/json",
+            "Authorization": `${devApiKey.trim()}:${clerkApiKey.trim()}`,
+          },
+        });
         await testResponse.text();
+
+        if (testResponse.status === 401 || testResponse.status === 403) {
+          return new Response(
+            JSON.stringify({ success: false, message: "Invalid API credentials. Please check your keys." }),
+            { status: 200, headers: jsonHeaders }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ success: false, message: "Invalid API credentials. Please check your keys." }),
+          JSON.stringify({ success: true, message: "Connection verified successfully!" }),
+          { status: 200, headers: jsonHeaders }
+        );
+      } catch (fetchError) {
+        console.error("ClickBank API test error:", fetchError);
+        return new Response(
+          JSON.stringify({ success: false, message: "Could not reach ClickBank API right now. You can still connect — the hourly sync will verify in the background." }),
           { status: 200, headers: jsonHeaders }
         );
       }
-
-      // Consume body
-      await testResponse.text();
-    } catch (fetchError) {
-      console.error("ClickBank API test error:", fetchError);
-      return new Response(
-        JSON.stringify({ success: false, message: "Could not reach ClickBank API. Please try again." }),
-        { status: 200, headers: jsonHeaders }
-      );
     }
-
-    // If test only, return success without storing
-    if (testOnly) {
-      return new Response(
-        JSON.stringify({ success: true, message: "Connection verified successfully!" }),
-        { status: 200, headers: jsonHeaders }
-      );
-    }
+    // For real save: skip live API check entirely so a lagging ClickBank API
+    // never prevents the user from committing verified credentials.
 
     // Validate nickname for storage
     if (!nickname || typeof nickname !== "string" || nickname.trim().length < 1 || nickname.trim().length > 100) {
