@@ -18,7 +18,7 @@ export function getCorsHeaders(req: Request): Record<string, string> {
   ].filter(Boolean);
 
   // Check if origin is allowed
-  const isAllowed = allowedOrigins.some(allowed => origin === allowed || origin.endsWith(".lovable.app"));
+  const isAllowed = allowedOrigins.some(allowed => origin === allowed) || origin.endsWith(".lovable.app") || origin.endsWith(".lovableproject.com") || origin.endsWith(".lovable.dev");
   
   return {
     "Access-Control-Allow-Origin": isAllowed ? origin : allowedOrigins[0],
