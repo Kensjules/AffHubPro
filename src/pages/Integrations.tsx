@@ -59,6 +59,20 @@ export default function Integrations() {
   const isConnected = integration?.is_connected ?? false;
   const cbIsConnected = cbIntegration?.is_connected ?? false;
 
+  const { user } = useAuth();
+  const { data: txCount } = useQuery({
+    queryKey: ["integration-tx-count", user?.id],
+    enabled: !!user?.id && (isConnected || cbIsConnected),
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("transactions_cache")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      return count ?? 0;
+    },
+  });
+  const hasSales = (txCount ?? 0) > 0;
+
   const handleSyncNow = async () => {
     await syncNow();
   };
