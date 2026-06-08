@@ -244,7 +244,7 @@ export default function Integrations() {
               ) : cbIsConnected ? (
                 <Badge variant="outline" className="bg-success/15 text-success border-success/30 hover:bg-success/15">
                   <Radio className="h-3 w-3 mr-1 animate-pulse" />
-                  Live
+                  {cbIntegration?.last_sync_at ? "Live" : "Live (Sync Pending)"}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">
