@@ -7,12 +7,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info, RefreshCw, CheckCircle2, Settings2, Loader2, Bell } from "lucide-react";
+import { Info, RefreshCw, CheckCircle2, Settings2, Loader2, Bell, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { ClickBankConnectDialog } from "@/components/integrations/ClickBankConnectDialog";
 import { useAwinIntegration } from "@/hooks/useAwinIntegration";
 import { useClickBankIntegration } from "@/hooks/useClickBankIntegration";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
 // Awin logo SVG component with official teal brand color
@@ -55,6 +58,20 @@ export default function Integrations() {
 
   const isConnected = integration?.is_connected ?? false;
   const cbIsConnected = cbIntegration?.is_connected ?? false;
+
+  const { user } = useAuth();
+  const { data: txCount } = useQuery({
+    queryKey: ["integration-tx-count", user?.id],
+    enabled: !!user?.id && (isConnected || cbIsConnected),
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("transactions_cache")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user!.id);
+      return count ?? 0;
+    },
+  });
+  const hasSales = (txCount ?? 0) > 0;
 
   const handleSyncNow = async () => {
     await syncNow();
@@ -100,9 +117,9 @@ export default function Integrations() {
                   Loading
                 </Badge>
               ) : isConnected ? (
-                <Badge variant="outline" className="bg-accent/20 text-accent border-accent/30 hover:bg-accent/20">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Connected
+                <Badge variant="outline" className="bg-success/15 text-success border-success/30 hover:bg-success/15">
+                  <Radio className="h-3 w-3 mr-1 animate-pulse" />
+                  Live
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">
@@ -140,6 +157,13 @@ export default function Integrations() {
                     </span>
                   </div>
                 )}
+
+                {!hasSales && (
+                  <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-primary">
+                    Connection Active: Waiting for your first sale!
+                  </div>
+                )}
+
 
                 <div className="flex gap-2 pt-2">
                   <Button
@@ -218,9 +242,9 @@ export default function Integrations() {
                   Loading
                 </Badge>
               ) : cbIsConnected ? (
-                <Badge variant="outline" className="bg-accent/20 text-accent border-accent/30 hover:bg-accent/20">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Connected
+                <Badge variant="outline" className="bg-success/15 text-success border-success/30 hover:bg-success/15">
+                  <Radio className="h-3 w-3 mr-1 animate-pulse" />
+                  Live
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">
@@ -253,6 +277,13 @@ export default function Integrations() {
                     </span>
                   </div>
                 )}
+
+                {!hasSales && (
+                  <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-primary">
+                    Connection Active: Waiting for your first sale!
+                  </div>
+                )}
+
 
                 <div className="flex gap-2 pt-2">
                   <Button
