@@ -278,6 +278,13 @@ export default function Integrations() {
                   </div>
                 )}
 
+                {!hasSales && (
+                  <div className="rounded-md bg-primary/5 border border-primary/20 px-3 py-2 text-xs text-primary">
+                    Connection Active: Waiting for your first sale!
+                  </div>
+                )}
+
+
                 <div className="flex gap-2 pt-2">
                   <Button
                     size="sm"
