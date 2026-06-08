@@ -117,9 +117,9 @@ export default function Integrations() {
                   Loading
                 </Badge>
               ) : isConnected ? (
-                <Badge variant="outline" className="bg-accent/20 text-accent border-accent/30 hover:bg-accent/20">
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Connected
+                <Badge variant="outline" className="bg-success/15 text-success border-success/30 hover:bg-success/15">
+                  <Radio className="h-3 w-3 mr-1 animate-pulse" />
+                  Live
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">
