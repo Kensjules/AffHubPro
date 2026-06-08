@@ -7,12 +7,15 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info, RefreshCw, CheckCircle2, Settings2, Loader2, Bell } from "lucide-react";
+import { Info, RefreshCw, CheckCircle2, Settings2, Loader2, Bell, Radio } from "lucide-react";
 import { toast } from "sonner";
 import { AwinConnectDialog } from "@/components/integrations/AwinConnectDialog";
 import { ClickBankConnectDialog } from "@/components/integrations/ClickBankConnectDialog";
 import { useAwinIntegration } from "@/hooks/useAwinIntegration";
 import { useClickBankIntegration } from "@/hooks/useClickBankIntegration";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { format } from "date-fns";
 
 // Awin logo SVG component with official teal brand color
