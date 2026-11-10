@@ -120,6 +120,7 @@ export type Database = {
           display_name: string | null
           email: string
           id: string
+          monthly_goal: number | null
           stripe_customer_id: string | null
           subscription_status: string
           timezone: string | null
@@ -131,6 +132,7 @@ export type Database = {
           display_name?: string | null
           email: string
           id: string
+          monthly_goal?: number | null
           stripe_customer_id?: string | null
           subscription_status?: string
           timezone?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           display_name?: string | null
           email?: string
           id?: string
+          monthly_goal?: number | null
           stripe_customer_id?: string | null
           subscription_status?: string
           timezone?: string | null
