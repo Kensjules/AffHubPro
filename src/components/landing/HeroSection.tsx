@@ -46,7 +46,7 @@ export function HeroSection() {
           >
             <Button variant="hero" size="xl" asChild>
               <Link to={user ? "/dashboard" : "/signup"}>
-                {user ? "Go to Dashboard" : "Start Free Trial"}
+                {user ? "Go to Dashboard" : "Start Free"}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
@@ -61,15 +61,15 @@ export function HeroSection() {
             className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 pt-8 animate-fade-in-up" 
             style={{ animationDelay: "0.4s" }}
           >
-            <span className="text-sm font-medium text-primary">✓ Works With Any Affiliate Source</span>
-            <span className="text-sm font-medium text-primary">✓ Universal CSV Import</span>
-            <span className="text-sm font-medium text-primary">✓ Networks, Brands & Direct Links</span>
+            <span className="text-sm font-medium text-primary">✓ Live Sync for Awin & ClickBank</span>
+            <span className="text-sm font-medium text-primary">✓ Any Brand via CSV or Manual Entry</span>
+            <span className="text-sm font-medium text-primary">✓ Free-Forever Starter Plan</span>
           </div>
 
           <div className="pt-6 animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
             <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Connects with</p>
             <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-lg font-display font-semibold text-foreground/70">
-              <span>Awin</span><span>ShareASale</span><span>ClickBank</span><span>Direct Brands</span>
+              <span>Awin <span className="text-sm font-normal text-muted-foreground">(incl. former ShareASale)</span></span><span>ClickBank</span><span className="text-base font-normal text-muted-foreground">Any brand via CSV or manual entry</span>
             </div>
           </div>
         </div>

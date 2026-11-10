@@ -26,14 +26,14 @@ export function CTASection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button variant="hero" size="xl" asChild>
               <Link to={user ? "/dashboard" : "/signup"}>
-                {user ? "Go to Dashboard" : "Start Your Free Trial"}
+                {user ? "Go to Dashboard" : "Start Free"}
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
           </div>
           {!user && (
             <p className="text-sm text-muted-foreground mt-4">
-              14-day free trial · No credit card required
+              Free-forever Starter plan · No credit card required
             </p>
           )}
         </div>

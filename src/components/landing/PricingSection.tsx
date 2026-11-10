@@ -42,7 +42,7 @@ const pricingPlans = [
       { text: "Lifetime History" },
       { text: "Priority Support" },
     ] as PlanFeature[],
-    buttonText: "Start Free Trial",
+    buttonText: "Upgrade to Pro",
     buttonVariant: "default" as const,
     featured: true,
     action: "checkout" as const,
@@ -172,7 +172,7 @@ export function PricingSection() {
                         className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/30"
                         asChild
                       >
-                        <Link to="/signup">Start Free Trial</Link>
+                        <Link to="/signup">Upgrade to Pro</Link>
                       </Button>
                     )
                   ) : (
@@ -192,7 +192,7 @@ export function PricingSection() {
         </div>
 
         <p className="text-center text-muted-foreground text-sm mt-12">
-          All plans include a 14-day free trial. No credit card required.
+          Starter is free forever. No credit card required.
         </p>
       </div>
     </section>

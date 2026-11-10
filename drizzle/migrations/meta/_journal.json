@@ -8,6 +8,13 @@
       "when": 1794338936718,
       "tag": "0000_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794339298509,
+      "tag": "0001_protect_billing_fields",
+      "breakpoints": true
     }
   ]
 }

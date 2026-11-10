@@ -11,7 +11,7 @@ const steps = [
     icon: Link2,
     step: "02",
     title: "Import Your Data",
-    description: "Connect a network via API or import any affiliate data with CSV. We support ShareASale, Awin, Impact, and direct brand exports. Full Control: Add or remove custom affiliate partners in seconds."
+    description: "Connect a network via API or import any affiliate data with CSV. Awin (including former ShareASale programs) and ClickBank sync automatically; any other brand or network comes in through CSV import or manual entry. Full Control: Add or remove custom affiliate partners in seconds."
   },
   {
     icon: LayoutDashboard,
