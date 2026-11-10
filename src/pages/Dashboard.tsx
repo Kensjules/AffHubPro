@@ -20,6 +20,9 @@ import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { RecentTransactionsTable } from "@/components/dashboard/RecentTransactionsTable";
 import { BrokenLinkScanner } from "@/components/dashboard/BrokenLinkScanner";
 import { QuickAddPayout } from "@/components/dashboard/QuickAddPayout";
+import { GoalTracker } from "@/components/dashboard/GoalTracker";
+import { WeeklySummary } from "@/components/dashboard/WeeklySummary";
+import { SaleAlerts } from "@/components/dashboard/SaleAlerts";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -143,6 +146,12 @@ export default function Dashboard() {
               />
             </>
           )}
+        </div>
+
+        <SaleAlerts />
+        <div className="grid gap-6 md:grid-cols-2 mb-8">
+          <GoalTracker />
+          <WeeklySummary />
         </div>
 
         {/* Revenue Chart */}
