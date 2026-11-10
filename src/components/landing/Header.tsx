@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Moon, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function Header() {
@@ -24,15 +24,12 @@ export function Header() {
           <a href="#pricing" className="nav-link">Pricing</a>
         </nav>
 
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="text-muted-foreground">
-            <Moon className="w-4 h-4" />
-          </Button>
-          <Link to="/dashboard" className="nav-link font-medium">Dashboard</Link>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <Link to="/dashboard" className="nav-link font-medium hidden sm:inline">Dashboard</Link>
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-muted-foreground cursor-pointer"
+            className="text-muted-foreground cursor-pointer hidden sm:inline-flex"
             style={{ pointerEvents: 'auto' }}
             onClick={() => {
               window.location.href = "/settings";
