@@ -45,7 +45,7 @@ export function GoalTracker() {
   };
 
   return (
-    <div className="glass-card p-6 rounded-2xl h-full">
+    <div className="glass p-6 rounded-xl h-full">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Target className="w-5 h-5 text-primary" />

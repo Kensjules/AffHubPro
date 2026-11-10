@@ -18,7 +18,7 @@ export function WeeklySummary() {
   }, {})).sort((a, b) => b[1] - a[1])[0];
 
   return (
-    <div className="glass-card p-6 rounded-2xl h-full">
+    <div className="glass p-6 rounded-xl h-full">
       <div className="flex items-center gap-2 mb-4">
         <CalendarDays className="w-5 h-5 text-primary" />
         <h3 className="font-semibold">Last 7 Days</h3>
