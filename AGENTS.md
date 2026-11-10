@@ -1,0 +1,2 @@
+# Architecture rules
+- Keep payment confirmation in a dedicated polling hook with a 30-second deadline; the success page must show success only after a server-verified subscription, never from navigation alone.
