@@ -1,78 +1,26 @@
-import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Loader2 } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useProfile";
+import { CheckCircle2, Loader2, Clock3 } from "lucide-react";
+import { usePaymentConfirmation } from "@/hooks/usePaymentConfirmation";
+import { Button } from "@/components/ui/button";
 
 export default function SubscriptionSuccess() {
   const navigate = useNavigate();
-  const { refreshSubscription, isSubscribed } = useSubscription();
-  const { user } = useAuth();
-  const { data: profile } = useProfile();
-  const [countdown, setCountdown] = useState(5);
-  const confirmedRef = useRef(false);
-
-  const firstName = profile?.display_name?.split(" ")[0] || user?.email?.split("@")[0] || "User";
-
-  // Aggressive polling until subscription is confirmed
-  useEffect(() => {
-    refreshSubscription();
-
-    const pollInterval = setInterval(() => {
-      if (!confirmedRef.current) {
-        refreshSubscription();
-      }
-    }, 2000);
-
-    const pollTimeout = setTimeout(() => {
-      clearInterval(pollInterval);
-    }, 30000);
-
-    return () => {
-      clearInterval(pollInterval);
-      clearTimeout(pollTimeout);
-    };
-  }, [refreshSubscription]);
-
-  // Track when subscription is confirmed
-  useEffect(() => {
-    if (isSubscribed) {
-      confirmedRef.current = true;
-    }
-  }, [isSubscribed]);
-
-  // Countdown and redirect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          navigate("/dashboard", { replace: true });
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [navigate]);
+  const status = usePaymentConfirmation();
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="glass rounded-2xl p-10 max-w-md w-full text-center space-y-6 animate-fade-in-up">
-        <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mx-auto">
-          <CheckCircle2 className="w-8 h-8 text-success" />
+      <div className="glass rounded-2xl p-10 max-w-md w-full text-center space-y-6 animate-fade-in-up" role="status" aria-live="polite">
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${status === "confirmed" ? "bg-success/20" : "bg-primary/10"}`}>
+          {status === "confirmed" ? <CheckCircle2 className="w-8 h-8 text-success" /> : status === "confirming" ? <Loader2 className="w-8 h-8 text-primary animate-spin motion-reduce:animate-none" /> : <Clock3 className="w-8 h-8 text-primary" />}
         </div>
         <h1 className="text-2xl font-display font-bold text-foreground">
-          Welcome to Pro, {firstName}!
+          {status === "confirmed" ? "You're on Pro" : status === "confirming" ? "Confirming your payment…" : "Payment confirmation pending"}
         </h1>
         <p className="text-muted-foreground">
-          Your subscription is now active. You have access to all Pro features including unlimited stores, CSV import, and advanced analytics.
+          {status === "confirmed" ? "Your subscription is now active. You have access to all Pro features including unlimited stores, CSV import, and advanced analytics." : status === "pending" ? "We're still confirming your payment. This can take a minute. Refresh this page or check Settings. If you were charged and it doesn't update, email support." : null}
         </p>
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          {!isSubscribed && <Loader2 className="w-3 h-3 animate-spin" />}
-          <span>Redirecting to dashboard in {countdown}s...</span>
-        </div>
+        {status === "confirmed" && <Button variant="hero" onClick={() => navigate("/dashboard", { replace: true })}>Go to Dashboard</Button>}
+        {status === "pending" && <div className="flex flex-wrap justify-center gap-3"><Button variant="glass" onClick={() => window.location.reload()}>Refresh</Button><Button variant="hero" onClick={() => navigate("/settings")}>Settings</Button></div>}
       </div>
     </div>
   );
