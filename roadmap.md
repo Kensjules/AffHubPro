@@ -7,8 +7,8 @@
 ## Payment verification
 - [x] Confirm payment before showing Pro success; retry every 3 seconds for up to 30 seconds.
 - [ ] Add customer.subscription.deleted to the existing test webhook — requires owner approval.
-- [ ] Complete one preview test-card checkout and verify webhook upgrades the profile to pro.
-- [ ] Cancel that test subscription and verify webhook returns the profile to free.
+- [x] Complete one preview test-card checkout and verify webhook upgrades the profile to pro; success appears only after subscription verification.
+- [ ] Cancel that test subscription and verify webhook returns the profile to free — blocked until owner approves the missing cancellation event.
 
 ## Before launch
 - [ ] Owner switches Stripe keys in secure settings and configures the Pro price for LIVE mode.
