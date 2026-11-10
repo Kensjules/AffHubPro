@@ -137,6 +137,9 @@ export default function Integrations() {
                 Sync your affiliate transactions, commissions, and merchant data
                 automatically.
               </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                ShareASale is now part of Awin — connect your Awin account to see these programs.
+              </p>
             </div>
 
             {/* Connected State - Show Publisher ID and Actions */}
