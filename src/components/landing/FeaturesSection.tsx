@@ -29,7 +29,7 @@ const features = [
   {
     icon: Globe,
     title: "Universal Data Import",
-    description: "Import data from ShareASale, Impact, direct brand partnerships, or any affiliate source via CSV. One format, every revenue stream."
+    description: "Bring in any other network or brand partnership via CSV import or manual entry. One format, every revenue stream."
   }
 ];
 

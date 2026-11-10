@@ -95,7 +95,7 @@ export default function Integrations() {
 
         {/* Integration Cards */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* Awin / ShareASale Card */}
+          {/* Awin Card */}
           <div
             className={`glass rounded-xl p-6 space-y-4 transition-all duration-200 ${
               !isConnected ? "cursor-pointer hover:border-primary/50 hover:shadow-lg" : ""
@@ -131,7 +131,7 @@ export default function Integrations() {
             {/* Title & Description */}
             <div>
               <h3 className="text-lg font-semibold text-foreground">
-                Awin / ShareASale
+                Awin
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Sync your affiliate transactions, commissions, and merchant data

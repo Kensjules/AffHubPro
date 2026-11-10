@@ -31,7 +31,7 @@ export function WeeklySummary() {
         </p>
       ) : <p className="text-sm text-muted-foreground mb-3">No earnings the week before to compare.</p>}
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div><p className="text-muted-foreground">Sales</p><p className="font-semibold">{thisWeek.length}</p></div>
+        <div><p className="text-muted-foreground">Sales</p><p className="font-semibold">{thisWeek.filter((r) => r.source === "network").length}</p></div>
         <div><p className="text-muted-foreground">Top brand</p><p className="font-semibold truncate">{top ? top[0] : "—"}</p></div>
       </div>
     </div>
