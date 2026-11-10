@@ -69,7 +69,7 @@ export default function Dashboard() {
       <DashboardSidebar />
 
       {/* Main Content - offset by sidebar width */}
-      <main className="ml-16 lg:ml-64 p-6 lg:p-8 transition-all duration-300">
+      <main className="ml-16 lg:ml-64 p-4 sm:p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>

@@ -6,7 +6,7 @@ const Reports = () => {
   return (
     <div className="min-h-screen bg-background flex">
       <DashboardSidebar />
-      <main className="flex-1 ml-64 p-8 flex items-center justify-center">
+      <main className="flex-1 ml-16 lg:ml-64 p-4 sm:p-8 flex items-center justify-center">
         <Card className="glass max-w-md w-full text-center">
           <CardHeader>
             <div className="mx-auto w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2">

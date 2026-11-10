@@ -32,7 +32,7 @@ export function DashboardSidebar() {
   const location = useLocation();
   const { user } = useAuth();
   const { data: profile } = useProfile();
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
   const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -103,6 +103,7 @@ export function DashboardSidebar() {
 
       {/* Collapse Toggle */}
       <button
+        aria-label={collapsed ? "Expand menu" : "Collapse menu"}
         onClick={() => setCollapsed(!collapsed)}
         className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
       >

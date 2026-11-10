@@ -82,7 +82,7 @@ export default function Integrations() {
       <DashboardSidebar />
 
       {/* Main Content */}
-      <main className="ml-16 lg:ml-64 p-6 lg:p-8">
+      <main className="ml-16 lg:ml-64 p-4 sm:p-6 lg:p-8">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-2xl lg:text-3xl font-display font-semibold text-foreground mb-2">
