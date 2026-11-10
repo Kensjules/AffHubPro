@@ -69,9 +69,9 @@ export default function Dashboard() {
       <DashboardSidebar />
 
       {/* Main Content - offset by sidebar width */}
-      <main className="ml-16 lg:ml-64 p-6 lg:p-8 transition-all duration-300">
+      <main className="ml-16 lg:ml-64 p-4 sm:p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
           <div>
             {profileLoading ? (
               <>
@@ -80,14 +80,14 @@ export default function Dashboard() {
               </>
             ) : (
               <>
-                <h1 className="text-3xl font-display font-bold text-foreground">
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
                   Welcome back, <span className="gradient-text">{displayName}</span>
                 </h1>
                 <p className="text-muted-foreground mt-1">Here's what's happening with your affiliate business.</p>
               </>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 px-4 py-2 rounded-lg glass">
               <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
               <span className="text-sm text-muted-foreground">Last sync: {lastSyncText}</span>

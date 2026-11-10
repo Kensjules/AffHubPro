@@ -125,7 +125,7 @@ export default function Transactions() {
       <DashboardSidebar />
 
       {/* Main Content */}
-      <main className="ml-16 lg:ml-64 p-6 lg:p-8 transition-all duration-300">
+      <main className="ml-16 lg:ml-64 p-4 sm:p-6 lg:p-8 transition-all duration-300">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>

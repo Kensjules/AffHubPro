@@ -7,7 +7,7 @@ export function HeroSection() {
   const { user } = useAuth();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden">
+    <section className="relative min-h-[min(100vh,860px)] flex items-center justify-center pt-28 pb-16 overflow-hidden">
       <div className="absolute inset-0 -z-10" style={{ pointerEvents: 'none' }}>
         <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] bg-[hsl(217,91%,60%)]/5 rounded-full blur-3xl" />
@@ -50,15 +50,27 @@ export function HeroSection() {
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </Button>
+            {!user && (
+              <Button variant="outline" size="xl" asChild>
+                <Link to="/login">Sign In</Link>
+              </Button>
+            )}
           </div>
 
           <div 
-            className="flex flex-wrap items-center justify-center gap-12 pt-8 animate-fade-in-up" 
+            className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 pt-8 animate-fade-in-up" 
             style={{ animationDelay: "0.4s" }}
           >
             <span className="text-sm font-medium text-primary">✓ Works With Any Affiliate Source</span>
             <span className="text-sm font-medium text-primary">✓ Universal CSV Import</span>
             <span className="text-sm font-medium text-primary">✓ Networks, Brands & Direct Links</span>
+          </div>
+
+          <div className="pt-6 animate-fade-in-up" style={{ animationDelay: "0.5s" }}>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-3">Connects with</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-lg font-display font-semibold text-foreground/70">
+              <span>Awin</span><span>ShareASale</span><span>ClickBank</span><span>Direct Brands</span>
+            </div>
           </div>
         </div>
       </div>
